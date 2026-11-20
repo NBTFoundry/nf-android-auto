@@ -180,8 +180,11 @@ bool Daemon::start(char* const* first) {
     return false;
   }
   char* argv[] = {path_, NULL};
-  const int null_fd = open("/dev/null", O_RDONLY);
-  const int fds[3] = {null_fd, STDOUT_FILENO, STDERR_FILENO};
+  /* Its output to /dev/null: it then keeps its own log, 5 MB in
+   * /dev/shmem/nbt-aad.log or on a USB stick (flag "usblog" in the data
+   * folder), which the manager's 64 KiB application log could not hold. */
+  const int null_fd = open("/dev/null", O_RDWR);
+  const int fds[3] = {null_fd, null_fd, null_fd};
   /* In this process's group: whatever stops the adapter's group stops it too. */
   const int err = nbt::app::spawn_child(path_, argv, env, fds, 3, false, &pid_);
   if (null_fd >= 0) close(null_fd);

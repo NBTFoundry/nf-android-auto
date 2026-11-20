@@ -2,9 +2,9 @@
 # release/package.args from it and src/settings.def (a --setting line per row);
 # `make test` fails when that file is out of date.
 #
-# Bridge 1.0 only (README, "Status"): the menu label and bring-to-front. The
-# daemon still places its own window and the manager cannot yet hold iDrive's
-# focus for it or step it aside for the camera: not for use while driving.
+# Bridge 1.0 only (README, "Status"): the menu label. Not `show`: the
+# manager would hand the application its surface, which the daemon does not
+# use (it places its own), and stop it when nothing appeared there.
 --app
 android-auto
 --compat
@@ -13,4 +13,4 @@ nbt_6.5_armv7
 1.0
 --bridge-uses=
 --bridge-optional
-show,status
+status

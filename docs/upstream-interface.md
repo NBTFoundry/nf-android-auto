@@ -25,7 +25,7 @@ the start.
 | Program | Appended to the adapter (`nbt/app/payload.h`), copied to `NBT_DATA_DIR/nbt-aad` at every start |
 | Folders | `NBT_DATA_DIR` makes it a managed install (seam S1): its settings flags, `nbt-aad.env` and boot guard live there; nothing under `/opt/aa` or `/var/opt/aa` is read |
 | Environment | The manager's (iDrive's `PATH`, `LD_LIBRARY_PATH`, `LD_PRELOAD`, `GRAPHICS_ROOT`, `TZ`), the settings' `NBT_*` variables first |
-| Descriptors | stdin `/dev/null`, stdout and stderr the adapter's (the application's log); nothing of the bridge |
+| Descriptors | `/dev/null` for all three, nothing of the bridge: the daemon then keeps its own log, 5 MB in `/dev/shmem/nbt-aad.log` (or on a USB stick with the flag `usblog` in the data folder); the manager's 64 KiB application log holds the adapter's lines |
 | Health check | `nbt-aad --license`: the program and the car's libraries it links load; nothing else is touched |
 | Ready | The first `pong` on the control port, within 4.5 s |
 | Alive | A `pong` every 2 s; three missed answers stop it as hung |
@@ -36,7 +36,7 @@ the start.
 
 UDP `127.0.0.1:52790` (`NBT_CTL_PORT` moves it; host tests only). Words the
 adapter sends: `ping` (answered `pong`), `show` (the manager's
-bring-to-front), `quit`. Words the retired plugin sent and the bridge will
+bring-to-front, once the package may declare `show`: bridge 1.6), `quit`. Words the retired plugin sent and the bridge will
 send through the adapter (bridge 1.6, below): `gear <n>`, `pdc <n>`,
 `daynight <n>`, `drivemode <prop> <n> <prev>`, `dsc <n> <prev>`,
 `camera <ctx>`, `hide`.
@@ -70,8 +70,10 @@ the manager provides or will.
 
 ## What the manager does not provide yet (bridge 1.6)
 
-Until then the package declares bridge 1.0 (`show`, `status`) and is **not
-for use while driving**: nothing steps Android Auto aside for the reverse
+Until then the package declares bridge 1.0 (`status` only: with `show` the
+manager hands over its own surface, which the daemon does not use, and stops
+the application when nothing appears there) and is **not for use while
+driving** without NBT-AAD's own plugin (see docs/car-test.md): nothing steps Android Auto aside for the reverse
 camera, park assist, iDrive's warnings or calls; the knob also reaches iDrive
 under Android Auto; and the daemon still runs `pfctl -d` for its port.
 
@@ -79,6 +81,7 @@ under Android Auto; and the daemon still runs `pfctl -d` for its port.
   subscribes to for running applications, relayed as the car gives them; the
   adapter turns them into the words above with NBT-AAD's own parsers.
 - **Focus hold** (`hold`): iDrive held on an inert state while the
-  application's own surface is on the panel, with `aside` when iDrive takes it.
+  application's own surface is on the panel, with `aside` when iDrive takes it;
+  and `show` for an application that places its own surface (no hand-over).
 - **Firewall** (`bridge-net=tcp:5277@uap0,wfd0`): the host adds and removes
   the rule; the adapter sets `NBT_KEEP_PF=1`.

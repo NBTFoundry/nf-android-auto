@@ -10,7 +10,7 @@ nbt_6.5_armv7
 1.0
 --bridge-uses=
 --bridge-optional
-show,status
+status
 --setting
 audio|Audio|bluetooth|bluetooth,native
 --setting

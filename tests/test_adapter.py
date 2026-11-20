@@ -89,7 +89,7 @@ class AdapterTest(unittest.TestCase):
         env = {k: v for k, v in os.environ.items() if not k.startswith(("NBT_", "NF_AA_"))}
         env.update({
             "NBT_LAUNCH": launch, "NBT_DATA_DIR": self.data, "NBT_BRIDGE": "1.0",
-            "NBT_BRIDGE_CAPS": "show,status", "NBT_STATUS_FD": str(status_w),
+            "NBT_BRIDGE_CAPS": "status", "NBT_STATUS_FD": str(status_w),
             "NBT_CTL_PORT": str(self.port), "NF_AA_SHMEM_DIR": self.shmem,
             "NF_AA_FAKE": mode, "NF_AA_FAKE_LOG": self.log, "LD_PRELOAD": "",
         })
@@ -159,6 +159,8 @@ class AdapterTest(unittest.TestCase):
         # stdin, stdout, stderr and the fake's own socket: nothing of the bridge.
         self.assertEqual(fds[:3], [0, 1, 2])
         self.assertLessEqual(len(fds), 4, fds)
+        for fd in (0, 1, 2):  # it keeps its own log
+            self.assertEqual(os.readlink("/proc/%d/fd/%d" % (pid, fd)), "/dev/null")
         proc.send_signal(signal.SIGTERM)
         self.finish(proc)
 

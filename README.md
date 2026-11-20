@@ -30,9 +30,10 @@ authors. Android Auto is a trademark of Google LLC.
 what NBT-AAD's own iDrive plugin did: stepping aside for the reverse camera,
 park assist, warnings and calls, and holding iDrive's focus under Android
 Auto. That is bridge 1.6, planned in the manager; see
-[docs/upstream-interface.md](docs/upstream-interface.md). Do not install it
-next to a hand or NBTApps install of NBT-AAD: the adapter refuses to start
-while another daemon runs.
+[docs/upstream-interface.md](docs/upstream-interface.md). Until then NBT-AAD's
+own iDrive plugin, left installed, serves the managed daemon too:
+[docs/car-test.md](docs/car-test.md) is the test with it. The adapter refuses
+to start while another install's daemon runs.
 
 ```mermaid
 flowchart LR

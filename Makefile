@@ -162,8 +162,8 @@ qnx-check: qnx
 # adapter, with the car's libraries NBT-AAD links and the SP1 ones it needs.
 # The VM has no Bluetooth, Wi-Fi, display or network stack (io-pkt-v4 does not
 # come up under its QEMU board), so it checks that the health check loads the
-# daemon on SP1 and that a user start runs the daemon's own start-up, which
-# then ends without sockets. The control port is the host tests' and the car's. ---
+# daemon on SP1 and that a user start runs the daemon's own start-up (its own
+# log, /dev/shmem/nbt-aad.log), which then ends without sockets. The control port is the host tests' and the car's. ---
 VM_DIR := $(BUILD_DIR)/vm
 VM_SP1_LIB := $(QNX65_SP1_SYSROOT)/armle-v7/lib
 VM_RUN := $(NBT_SDK_ROOT)/tools/qnx65-vm/run.sh
@@ -184,11 +184,12 @@ vm-test: $(QNX_APP)
 	QEMU_RUN_SECS=60 $(VM_RUN) \
 		$(call vm_background,NBT_LAUNCH=check $(VM_ENV) $(VM_APP),8,2) \
 		$(call vm_background,NBT_LAUNCH=user $(VM_ENV) $(VM_APP),15,2) \
+		-c "cat /dev/shmem/nbt-aad.log" \
 		-x 'check: /dev/shmem/nbt-aad loads on this head unit' \
 		-x 'daemon: started /dev/shmem/nbt-aad' -x '\[Ctl\] socket failed' \
 		-x 'daemon ended while starting' \
 		$(VM_DIR)/$(VM_APP) $(VM_DIR)/liba2i_client.so $(VM_DIR)/libssl.so.2 $(VM_DIR)/libcrypto.so.2 \
-		$(VM_SP1_LIB)/libusbdi.so.2 $(VM_SP1_LIB)/libcpp.so.4
+		$(VM_SP1_LIB)/libusbdi.so.2 $(VM_SP1_LIB)/libcpp.so.4 $(QNX65_SP1_SYSROOT)/armle-v7/bin/cat
 
 # --- The signed package ---
 PACKAGE_INPUT ?= $(QNX_APP)

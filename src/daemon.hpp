@@ -29,7 +29,7 @@ class Daemon {
   bool answering_is_ours();
 
   /* Starts it with `first` ahead of this process's environment (iDrive's
-   * preloads included), its output on this process's. */
+   * preloads included); it keeps its own log. */
   bool start(char* const* first);
   pid_t pid() const { return pid_; }
   /* Whether it still runs; when it has ended, *status gets its wait status. */
