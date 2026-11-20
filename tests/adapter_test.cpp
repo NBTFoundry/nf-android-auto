@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 // Unit tests: the settings table as the daemon receives it, the status and
-// state records.
+// state records, the daemon log's copy.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "daemon_log.hpp"
 #include "daemon_settings.hpp"
 #include "daemon_status.hpp"
 #include "nbt/app/settings.hpp"
@@ -50,7 +51,7 @@ void test_defaults() {
   aa::DaemonSettings s;
   CHECK(aa::daemon_settings(none, &s));
   CHECK(has_env(s, "NBT_AUDIO_MODE=bt"));
-  CHECK(has_env(s, "NBT_ALT_WIFI=CARPLAY"));
+  CHECK(has_env(s, "NBT_ALT_WIFI=DIRECT"));
   CHECK(has_env(s, "NBT_USB=0"));
   CHECK(!has_var(s, "NBT_VEHICLE")); /* auto: the daemon reads carplay.ini */
   CHECK(flag(s, "show-drivemode") == 0);
@@ -61,7 +62,7 @@ void test_defaults() {
 void test_choices() {
   nbt::app::Settings chosen;
   CHECK(chosen.set("audio", "native"));
-  CHECK(chosen.set("wifi", "direct"));
+  CHECK(chosen.set("wifi", "carplay"));
   CHECK(chosen.set("vehicle", "toyota"));
   CHECK(chosen.set("turn_timing", "time"));
   CHECK(chosen.set("drive_mode", "on"));
@@ -70,7 +71,7 @@ void test_choices() {
   aa::DaemonSettings s;
   CHECK(aa::daemon_settings(chosen, &s));
   CHECK(has_env(s, "NBT_AUDIO_MODE=browser"));
-  CHECK(has_env(s, "NBT_ALT_WIFI=DIRECT"));
+  CHECK(has_env(s, "NBT_ALT_WIFI=CARPLAY"));
   CHECK(has_env(s, "NBT_VEHICLE=toyota"));
   CHECK(has_env(s, "NBT_KOMBI_NAV_APPROACH=time"));
   CHECK(has_env(s, "NBT_USB=0"));
@@ -138,6 +139,36 @@ void test_status() {
   CHECK(!aa::parse_state("idle", &st));
 }
 
+/* copy_log_ends of `text` (as a file), into a string. */
+bool copied(const char* text, size_t head, size_t tail, char* out, size_t size) {
+  char path[] = "/tmp/nf-aa-log-XXXXXX";
+  const int fd = mkstemp(path);
+  if (fd < 0) return false;
+  const bool wrote = write(fd, text, strlen(text)) == static_cast<ssize_t>(strlen(text));
+  close(fd);
+  FILE* mem = fmemopen(out, size, "w");
+  const bool ok = wrote && mem && aa::copy_log_ends(path, mem, head, tail);
+  if (mem) fclose(mem);
+  unlink(path);
+  return ok;
+}
+
+void test_log_copy() {
+  char out[512];
+  CHECK(copied("one\ntwo\n", 64, 64, out, sizeof(out)));
+  CHECK(strstr(out, "(8 bytes) ----\none\ntwo\n---- end of ") != NULL);
+  /* Cut on line ends: the head keeps whole lines, the tail starts on one. */
+  CHECK(copied("aaaa\nbbbb\ncccc\ndddd\neeee\n", 7, 8, out, sizeof(out)));
+  CHECK(strstr(out, "(25 bytes): the first 7 and the last 8 ----\naaaa\n---- ... ----\neeee\n---- end of ") != NULL);
+  CHECK(strstr(out, "bbbb") == NULL && strstr(out, "dddd") == NULL);
+  /* No newline at the end: the end marker still starts a line. */
+  CHECK(copied("last words", 64, 64, out, sizeof(out)));
+  CHECK(strstr(out, "last words\n---- end of ") != NULL);
+  FILE* devnull = fopen("/dev/null", "w");
+  CHECK(!aa::copy_log_ends("/nonexistent/nbt-aad.log", devnull));
+  if (devnull) fclose(devnull);
+}
+
 }  // namespace
 
 int main() {
@@ -146,6 +177,7 @@ int main() {
   test_every_choice();
   test_flags_on_disk();
   test_status();
+  test_log_copy();
   if (g_failures) {
     fprintf(stderr, "%d adapter checks failed\n", g_failures);
     return 1;

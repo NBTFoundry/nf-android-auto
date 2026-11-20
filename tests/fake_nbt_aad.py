@@ -12,6 +12,8 @@ the adapter uses (src/protocol.hpp), driven by the environment.
 - NF_AA_FAKE modes: silent (never answers), crash (exits 3 after 1 s), hang
   (stops answering after 1 s), stubborn (ignores "quit" and SIGTERM),
   connected (reports a Wi-Fi session).
+- Its own log, nbt-aad.log in NF_AA_SHMEM_DIR, fresh at each start: a start
+  line, each word received, a stop line.
 """
 import json
 import os
@@ -29,6 +31,11 @@ def log(**record):
     if LOG:
         with open(LOG, "a") as f:
             f.write(json.dumps(record) + "\n")
+
+
+def daemon_log(line, fresh=False):
+    with open(os.path.join(SHMEM, "nbt-aad.log"), "w" if fresh else "a") as f:
+        f.write(line + "\n")
 
 
 def write_records(state, status):
@@ -60,6 +67,7 @@ def main():
     files = sorted(os.listdir(data_dir)) if os.path.isdir(data_dir) else []
     log(event="start", pid=os.getpid(), argv0=sys.argv[0], files=files,
         env={k: v for k, v in os.environ.items() if k.startswith(("NBT_", "LD_"))})
+    daemon_log("[Main] fake daemon started, pid %d" % os.getpid(), fresh=True)
     if MODE == "connected":
         write_records("connected", "connected|1|0|1|wifi")
     else:
@@ -74,6 +82,7 @@ def main():
             continue
         word = word.decode(errors="replace")
         log(event="word", word=word)
+        daemon_log("[Main] word %s" % word)
         if word == "ping":
             silent = MODE == "silent" or (MODE == "hang" and time.monotonic() - started > 1.0)
             if not silent:
@@ -81,6 +90,7 @@ def main():
         elif word == "quit" and MODE != "stubborn":
             running[0] = False
     log(event="stop")
+    daemon_log("[Main] fake daemon stopped")
     return 0
 
 

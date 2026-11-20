@@ -150,6 +150,12 @@ class AdapterTest(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertIn({"event": "word", "word": "quit"}, self.records())
         self.assertEqual(self.records()[-1]["event"], "stop")
+        # Its own log, copied into the application log once it ended.
+        log = out[out.index("nbt-aad.log ("):]
+        self.assertIn("[Main] fake daemon started", log)
+        self.assertIn("[Main] word show", log)
+        self.assertIn("[Main] fake daemon stopped", log)
+        self.assertIn("---- end of", log)
 
     def test_daemon_gets_no_bridge_descriptors(self):
         proc, ready_r = self.launch()
@@ -170,6 +176,7 @@ class AdapterTest(unittest.TestCase):
         code, out = self.finish(proc)
         self.assertEqual(code, 1, out)
         self.assertIn("daemon ended", out)
+        self.assertIn("[Main] fake daemon started", out[out.index("daemon ended"):])
 
     def test_hung_daemon_is_stopped(self):
         proc, ready_r = self.launch(mode="hang")

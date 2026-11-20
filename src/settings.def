@@ -14,7 +14,10 @@
 // A choice's position in `choices` picks its value in `values`.
 
 AA_SETTING(audio, "Audio", "bluetooth", "bluetooth,native", AA_ENV, "NBT_AUDIO_MODE", "bt,browser")
-AA_SETTING(wifi, "Wi-Fi network", "carplay", "carplay,direct", AA_ENV, "NBT_ALT_WIFI", "CARPLAY,DIRECT")
+// Wi-Fi: the car's Wi-Fi Direct group by default (upstream's default is the
+// CarPlay hotspot, which only cars with the CarPlay licence have). The group
+// is up whenever Miracast is coded.
+AA_SETTING(wifi, "Wi-Fi network", "direct", "carplay,direct", AA_ENV, "NBT_ALT_WIFI", "CARPLAY,DIRECT")
 AA_SETTING(usb, "Over USB (beta)", "off", "off,on", AA_ENV, "NBT_USB", "0,1")
 AA_SETTING(phone_gps, "Use the phone's GPS", "off", "off,on", AA_ENV, "NBT_PHONE_GPS", "0,1")
 AA_SETTING(wheel_media, "LCI wheel media keys", "off", "off,on", AA_ENV, "NBT_LCI_MEDIA", "0,1")

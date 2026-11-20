@@ -46,10 +46,13 @@ under Android Auto, as it does today. Part B checks that it does.
 
 ## B. Start and use
 
-1. Select **android-auto** in the manager's menu. The manager closes: this
-   build has no hand-over of the screen (no `show` grant).
-2. Reopen the manager: the entry reads **android-auto (Waiting for phone)**
-   (or "No Wi-Fi: USB only" when no network is up).
+1. Select **android-auto** in the manager's menu. It starts in the background
+   (this build has no hand-over of the screen, no `show` grant). From NBT
+   Manager dev121 the manager stays open and says "Application started"
+   (earlier ones close).
+2. The entry reads **android-auto (Waiting for phone)** (or "No Wi-Fi: USB
+   only" when no network is up). A start with the car (Start with the car:
+   on) shows nothing: the manager is not opened.
 3. Connect the phone as usual. Android Auto must appear on its own. The label
    becomes **Connected (Wi-Fi)** (or USB).
 4. Use it: knob, touch, voice, media, a navigation route, a call, the volume.
@@ -102,7 +105,9 @@ from `/var/opt/nbt-manager/data/android-auto/nbt-aad`.
 
 ## Logs (before switching the car off: `/dev/shmem` is RAM)
 
-- The adapter's lines: the phone app's log for **android-auto**.
+- The adapter's lines: the phone app's log for **android-auto**. From 0.0.5
+  it also holds the start and the end of the daemon's own log, copied when
+  the daemon ends: stop **android-auto** first, then **Show log**, **Share**.
 - The daemon: `/dev/shmem/nbt-aad.log` (5 MB, per start). For a log that
   survives power off, before starting it:
   `touch /var/opt/nbt-manager/data/android-auto/usblog` with a USB stick

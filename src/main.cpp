@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "daemon.hpp"
+#include "daemon_log.hpp"
 #include "daemon_settings.hpp"
 #include "daemon_status.hpp"
 #include "nbt/app/clock.hpp"
@@ -72,14 +73,8 @@ bool await_answer(Lifecycle& lc, aa::Daemon& daemon) {
   return false;
 }
 
-int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
-  aa::DaemonSettings settings;
-  if (!aa::daemon_settings(lc.settings(), &settings)) {
-    log_info("settings table does not apply");
-    return 1;
-  }
-  if (!aa::apply_flags(settings, data_dir)) return 1;
-  if (!claim_port(lc, daemon) || !daemon.start(settings.env)) return 1;
+/* The started daemon, until it ends or the manager stops the application. */
+int watch(Lifecycle& lc, aa::Daemon& daemon) {
   if (!await_answer(lc, daemon) || !lc.send_ready()) {
     daemon.stop();
     return 1;
@@ -108,6 +103,19 @@ int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
   }
   daemon.stop();
   return 0;
+}
+
+int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
+  aa::DaemonSettings settings;
+  if (!aa::daemon_settings(lc.settings(), &settings)) {
+    log_info("settings table does not apply");
+    return 1;
+  }
+  if (!aa::apply_flags(settings, data_dir)) return 1;
+  if (!claim_port(lc, daemon) || !daemon.start(settings.env)) return 1;
+  const int rc = watch(lc, daemon);
+  aa::copy_daemon_log(); /* what it did, for the log the phone app shares */
+  return rc;
 }
 
 }  // namespace

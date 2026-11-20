@@ -14,7 +14,7 @@ status
 --setting
 audio|Audio|bluetooth|bluetooth,native
 --setting
-wifi|Wi-Fi network|carplay|carplay,direct
+wifi|Wi-Fi network|direct|carplay,direct
 --setting
 usb|Over USB (beta)|off|off,on
 --setting

@@ -38,6 +38,10 @@ const char kStateConnected[] = "connected";    // upstream: milestone-7/src/main
 const char kTransportWifi[] = "wifi";          // upstream: milestone-7/src/main.cpp
 const char kTransportUsb[] = "usb";            // upstream: milestone-7/src/main.cpp
 
+// Its own log in the same folder, fresh at each start (unless it logs to a
+// USB stick): copied into the application log when it ends.
+const char kLogFile[] = "nbt-aad.log";  // upstream: milestone-7/src/usb_log.hpp
+
 // The daemon's own settings environment: its settings folder (seam S1).
 const char kDataDirVar[] = "NBT_DATA_DIR";  // upstream: milestone-7/src/nbt_paths.hpp
 

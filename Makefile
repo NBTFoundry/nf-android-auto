@@ -34,7 +34,7 @@ AAD_ROOT := third_party/nbt-aad
 AAD_DIR := $(AAD_ROOT)/milestone-7
 
 # --- The adapter ---
-LIB_SRC := src/daemon.cpp src/daemon_settings.cpp src/daemon_status.cpp
+LIB_SRC := src/daemon.cpp src/daemon_log.cpp src/daemon_settings.cpp src/daemon_status.cpp
 APP_SRC := $(LIB_SRC) src/main.cpp
 APP_INC := $(NBT_SDK_INC) -Isrc
 APP_CXXFLAGS := -std=c++11 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti $(CXXFLAGS)
