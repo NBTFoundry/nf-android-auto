@@ -1,0 +1,6 @@
+build/
+*.o
+*.d
+*.nbt
+__pycache__/
+*.pyc

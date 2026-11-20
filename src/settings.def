@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: MPL-2.0
+// The application's settings: what NBT Manager shows, and what each choice
+// gives the daemon. The one table for them: src/daemon_settings.cpp applies
+// it, tools/package_args.py turns it into the package's --setting lines and
+// tools/check_protocol.py finds every target in the pinned daemon's sources.
+//
+// AA_SETTING(key, label, default, choices, kind, target, values)
+//   key, label, default, choices: the manager's setting (at most 12; key
+//     [a-z0-9_]{1,16}, label 1-24 characters, 1-6 choices of [a-z0-9_-]{1,12}).
+//   AA_ENV:  target is a daemon variable; values gives it one value per
+//            choice, "-" leaving it unset (the daemon's own default).
+//   AA_FLAG: target is a flag file in the data folder; values says, per
+//            choice, whether it exists ("1") or not ("0").
+// A choice's position in `choices` picks its value in `values`.
+
+AA_SETTING(audio, "Audio", "bluetooth", "bluetooth,native", AA_ENV, "NBT_AUDIO_MODE", "bt,browser")
+AA_SETTING(wifi, "Wi-Fi network", "carplay", "carplay,direct", AA_ENV, "NBT_ALT_WIFI", "CARPLAY,DIRECT")
+AA_SETTING(usb, "Over USB (beta)", "off", "off,on", AA_ENV, "NBT_USB", "0,1")
+AA_SETTING(phone_gps, "Use the phone's GPS", "off", "off,on", AA_ENV, "NBT_PHONE_GPS", "0,1")
+AA_SETTING(wheel_media, "LCI wheel media keys", "off", "off,on", AA_ENV, "NBT_LCI_MEDIA", "0,1")
+AA_SETTING(carplay, "CarPlay compatibility", "off", "off,on", AA_ENV, "NBT_CP_COMPAT", "0,1")
+AA_SETTING(cluster_nav, "Turns in cluster/HUD", "off", "off,on", AA_ENV, "NBT_KOMBI_NAV", "0,1")
+AA_SETTING(turn_timing, "Show turns", "any", "any,time,distance", AA_ENV, "NBT_KOMBI_NAV_APPROACH",
+           "off,time,distance")
+AA_SETTING(cluster, "Cluster", "j29", "j29,6wa", AA_ENV, "NBT_CLUSTER", "j29,6wa")
+AA_SETTING(vehicle, "Car make", "auto", "auto,bmw,toyota,mini,rollsroyce", AA_ENV, "NBT_VEHICLE",
+           "-,bmw,toyota,mini,rollsroyce")
+AA_SETTING(drive_mode, "Show drive mode changes", "off", "off,on", AA_FLAG, "show-drivemode", "0,1")
+AA_SETTING(favourites, "Favourites bar", "on", "on,off", AA_FLAG, "favourite-bar.disabled", "0,1")

@@ -1,0 +1,16 @@
+# The fixed part of the package description: `make package-args` writes
+# release/package.args from it and src/settings.def (a --setting line per row);
+# `make test` fails when that file is out of date.
+#
+# Bridge 1.0 only (README, "Status"): the menu label and bring-to-front. The
+# daemon still places its own window and the manager cannot yet hold iDrive's
+# focus for it or step it aside for the camera: not for use while driving.
+--app
+android-auto
+--compat
+nbt_6.5_armv7
+--bridge
+1.0
+--bridge-uses=
+--bridge-optional
+show,status

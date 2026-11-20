@@ -1,0 +1,37 @@
+# Written by tools/package_args.py from release/package.base and src/settings.def
+# (make package-args): the package description for tools/package.py, one argument
+# per line. `make package` and the release workflow add the version, sequence, key,
+# output and executable.
+--app
+android-auto
+--compat
+nbt_6.5_armv7
+--bridge
+1.0
+--bridge-uses=
+--bridge-optional
+show,status
+--setting
+audio|Audio|bluetooth|bluetooth,native
+--setting
+wifi|Wi-Fi network|carplay|carplay,direct
+--setting
+usb|Over USB (beta)|off|off,on
+--setting
+phone_gps|Use the phone's GPS|off|off,on
+--setting
+wheel_media|LCI wheel media keys|off|off,on
+--setting
+carplay|CarPlay compatibility|off|off,on
+--setting
+cluster_nav|Turns in cluster/HUD|off|off,on
+--setting
+turn_timing|Show turns|any|any,time,distance
+--setting
+cluster|Cluster|j29|j29,6wa
+--setting
+vehicle|Car make|auto|auto,bmw,toyota,mini,rollsroyce
+--setting
+drive_mode|Show drive mode changes|off|off,on
+--setting
+favourites|Favourites bar|on|on,off
