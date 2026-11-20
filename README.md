@@ -58,12 +58,23 @@ Head unit (QNX 6.5 ARMv7; `QNX_SCREEN_LIBDIR` holds `libscreen.so`):
 ```sh
 make QNX_ENV=/path/to/qnx-env.sh QNX_SCREEN_LIBDIR=/path/to/screen/lib qnx qnx-check
 make QNX_ENV=... QNX_SCREEN_LIBDIR=... vm-test      # QNX 6.5 SP1 under QEMU (the SDK's VM)
-make QNX_ENV=... QNX_SCREEN_LIBDIR=... package APP_KEY=/secure/apps-private.pem APP_SEQ=<n>
+make QNX_ENV=... QNX_SCREEN_LIBDIR=... package APP_KEY=<key> APP_VERSION=<x.y.z> APP_SEQ=<n>
 ```
 
 `qnx` builds the daemon with NBT-AAD's own Makefile and the car's libraries
 it carries, then appends it to the adapter: `build/nbt-android-auto-qnx` is
-the package's one executable. The package version is the pin's release.
+the package's one executable.
+
+## Releases
+
+A `vX.Y.Z` tag runs `.github/workflows/release.yml`: NBT Manager's application
+release workflow builds the package in the QNX image, signs it with the apps
+key after approval (the `release` environment, secret `APPS_SIGNING_KEY`, tags
+`v*` only) and publishes `android-auto-X.Y.Z.nbt`. The tag is this
+repository's own version (the sequence is X·10⁶ + Y·10³ + Z); each release
+names the NBT-AAD commit it carries. `release/sdk.ref` is the SDK commit that
+both the release and `ci.yml` build against. A local test package takes
+`APP_VERSION` and `APP_SEQ`.
 
 ## Settings
 

@@ -4,10 +4,11 @@ SHELL := /bin/bash
 BUILD_DIR ?= build
 OBJ_DIR := $(BUILD_DIR)/obj
 
-# The package version follows the pinned NBT-AAD release; APP_SEQ rises with
-# every package (the manager refuses a sequence that does not).
-APP_VERSION ?= $(shell git -C $(AAD_ROOT) describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
-APP_SEQ ?= 1
+# Releases: the vX.Y.Z tag gives the version and the sequence (release.yml).
+# A local package names both; the sequence must rise with every package
+# installed on a car (the manager refuses one that does not).
+APP_VERSION ?=
+APP_SEQ ?=
 APP_KEY ?=
 # Sibling NBTFoundry checkouts; override as needed. The SDK is built into
 # $(BUILD_DIR)/sdk; the manager is only needed for packaging and its checks.
@@ -202,7 +203,7 @@ package-args:
 package: $(PACKAGE_INPUT) check-protocol
 	@test -f "$(APP_KEY)" || { echo "APP_KEY must name the RSA signing key"; exit 1; }
 	@test -f "$(NBT_MGR_DIR)/tools/package.py" || { echo "NBT_MGR_DIR=$(NBT_MGR_DIR) has no tools/package.py"; exit 1; }
-	@test -n "$(APP_VERSION)" || { echo "APP_VERSION is empty (no tag on the pin?)"; exit 1; }
+	@test -n "$(APP_VERSION)" -a -n "$(APP_SEQ)" || { echo "APP_VERSION and APP_SEQ must be given"; exit 1; }
 	rm -f $(PACKAGE)
 	$(PYTHON) $(NBT_MGR_DIR)/tools/package.py @$(PACKAGE_ARGS) \
 		--version "$(APP_VERSION)" --sequence "$(APP_SEQ)" --key "$(APP_KEY)" \
