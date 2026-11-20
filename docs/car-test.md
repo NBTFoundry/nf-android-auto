@@ -13,10 +13,14 @@ under Android Auto, as it does today. Part B checks that it does.
 
 ## What you need
 
-- The car with NBT Manager from a test kit (it trusts the kit's `test-app`
-  key) and the phone app paired. Your hand install of NBT-AAD, working.
-- `build/car-test/`: `android-auto-1.9.112-seq1.nbt` and `-seq2.nbt`, and
-  `SHA256SUMS.txt`. Copy both packages to the phone.
+- The car with NBT Manager from test kit dev119 or later (it trusts the kit's
+  `test-app` key, starts applications with the car and runs bridge 1.5
+  applications only) and the phone app from the same kit, paired. Your hand
+  install of NBT-AAD, working.
+- `build/car-test/`: `android-auto-0.0.3.nbt` and `android-auto-0.0.4.nbt`
+  (NBT-AAD 1.9.112 inside both), and `SHA256SUMS.txt`. Copy both packages to
+  the phone. A copy of the bridge 1.0 test packages left on the car shows
+  "(needs an update)": 0.0.3 replaces it.
 - SSH to the head unit (the logs, and recovery).
 - Your NBT-AAD settings (iDrive: Android Auto entry → Settings, and
   `/opt/aa/nbt-aad.env`). The managed daemon reads none of them.
@@ -33,7 +37,7 @@ under Android Auto, as it does today. Part B checks that it does.
 
 ## A. Install, health check, settings
 
-1. On the phone: import `android-auto-1.9.112-seq1.nbt`, send it to the car,
+1. On the phone: import `android-auto-0.0.3.nbt`, send it to the car,
    approve on the car. The manager runs its health check (about 10 s): the
    adapter runs `nbt-aad --license` only. Install must succeed.
 2. In the manager's menu, hold the push on **android-auto**: 12 settings.
@@ -63,9 +67,25 @@ under Android Auto, as it does today. Part B checks that it does.
    Auto disappears and iDrive's screen is whole. `pidin -p nbt-aad` lists
    nothing.
 2. Start it again from the manager. The phone reconnects.
-3. While it runs, send `android-auto-1.9.112-seq2.nbt` from the phone and
+3. While it runs, send `android-auto-0.0.4.nbt` from the phone and
    approve. The update stops the running copy, runs the health check and
    installs. Start it again.
+
+## E. Start with the car
+
+This replaces NBT-AAD's **Start automatically** (leave that unticked).
+
+1. In the manager, hold the push on **android-auto**: the last row reads
+   **Start with the car: off**. Select it: **on**. On the phone, the
+   application's screen shows the same switch, now on.
+2. Switch the car off, lock it and wait until the head unit sleeps, then
+   start the car.
+3. Without opening the manager, Android Auto starts by itself about 25 s after
+   iDrive's menu appears, and the phone connects as in B.3. Note the time from
+   the iDrive menu to Android Auto.
+4. Restart iDrive only (over SSH: `OnOffDSICommander appreset`): no second
+   automatic start. Then set **Start with the car: off** and power cycle: it
+   stays off.
 
 ## D. Over SSH (optional)
 
@@ -109,6 +129,9 @@ phone). Tick NBT-AAD's **Start automatically** again.
 | C.2 start again | | |
 | C.3 update while running | | |
 | D leftover daemon stopped | | |
+| E.1 switch on, car and phone agree | | |
+| E.3 starts with the car (seconds after iDrive menu) | | |
+| E.4 once per boot; off stays off | | |
 
 With the car's software version (Navigation → Settings → Position and
 software version) and the phone model.
