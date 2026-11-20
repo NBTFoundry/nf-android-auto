@@ -17,7 +17,8 @@ const size_t kLogTailBytes = 16 * 1024;
 
 /* Copies the head and tail of the file at `path` to `out`, between two marker
  * lines; the cut falls on line ends. Returns false when there is no log. */
-bool copy_log_ends(const char* path, FILE* out, size_t head = kLogHeadBytes, size_t tail = kLogTailBytes);
+bool copy_log_ends(const char* path, FILE* out, size_t head = kLogHeadBytes,
+                   size_t tail = kLogTailBytes);
 
 /* copy_log_ends of the daemon's log, to standard output. */
 void copy_daemon_log();

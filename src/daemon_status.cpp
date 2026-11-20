@@ -58,12 +58,14 @@ const char* shmem_dir() {
 }
 
 bool parse_state(const char* text, DaemonState* out) {
-  int pid = 0, overlay = 0;
+  int pid = 0, overlay = 0, preview = 0;
   char state[sizeof(out->state)];
-  if (sscanf(text, "%23s %d %d", state, &pid, &overlay) != 3 || pid <= 0) return false;
+  const int fields = sscanf(text, "%23s %d %d %d", state, &pid, &overlay, &preview);
+  if (fields < 3 || pid <= 0) return false;
   memcpy(out->state, state, sizeof(state));
   out->pid = static_cast<pid_t>(pid);
   out->overlay = overlay;
+  out->preview = fields == 4 && preview == 1 ? 1 : 0; /* an older daemon writes three */
   return true;
 }
 

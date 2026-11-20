@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "daemon.hpp"
+#include "daemon_bridge.hpp"
 #include "daemon_log.hpp"
 #include "daemon_settings.hpp"
 #include "daemon_status.hpp"
@@ -73,22 +74,32 @@ bool await_answer(Lifecycle& lc, aa::Daemon& daemon) {
   return false;
 }
 
+/* The state record when this daemon wrote it, else NULL. */
+const aa::DaemonState* own_state(const aa::Daemon& daemon, aa::DaemonState* state) {
+  return aa::read_state(state) && state->pid == daemon.pid() ? state : NULL;
+}
+
 /* The started daemon, until it ends or the manager stops the application. */
 int watch(Lifecycle& lc, aa::Daemon& daemon) {
   if (!await_answer(lc, daemon) || !lc.send_ready()) {
     daemon.stop();
     return 1;
   }
+  aa::DaemonBridge bridge;
+  bridge.init(lc, monotonic_ms());
   int misses = 0;
   uint64_t last_ping = monotonic_ms();
   while (!lc.stopping()) {
     int status = 0;
     if (!daemon.running(&status)) {
       log_info("daemon ended, status 0x%x", static_cast<unsigned>(status));
+      bridge.poll(lc, daemon, NULL, monotonic_ms()); /* releases the hold */
       return 1;
     }
     if (lc.consume_show_requested()) daemon.send(aa::kShow);
     const uint64_t now = monotonic_ms();
+    aa::DaemonState state;
+    bridge.poll(lc, daemon, own_state(daemon, &state), now);
     if (now - last_ping >= kPingEveryMs) {
       last_ping = now;
       misses = daemon.ping(kPingTimeoutMs) ? 0 : misses + 1;
@@ -112,6 +123,9 @@ int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
     return 1;
   }
   if (!aa::apply_flags(settings, data_dir)) return 1;
+  /* The manager opened the daemon's port (capability `net`): the daemon
+   * leaves the packet filter on instead of switching it off. */
+  if (lc.net_rules()[0] && !aa::add_env(&settings, aa::kKeepPfVar, "1")) return 1;
   if (!claim_port(lc, daemon) || !daemon.start(settings.env)) return 1;
   const int rc = watch(lc, daemon);
   aa::copy_daemon_log(); /* what it did, for the log the phone app shares */

@@ -1,142 +1,106 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
-# Car test: Android Auto under NBT Manager (bridge 1.5 build, status only)
+# Car test: Android Auto under NBT Manager (bridge 1.6)
 
 Parked, ignition on. About 45 minutes. Keep SSH/ENET recovery at hand.
 
-This build replaces how NBT-AAD's daemon is installed, started and stopped. It
-does not yet replace NBT-AAD's iDrive plugin: keep the hand install's plugin
-in place. That plugin finds a daemon by its control port and
-`/dev/shmem/nbt-aad-state`, not by who started it (`readDaemonState()` in
-`rhmiapp/nbt_aad_app.cpp`). So it should feed the managed daemon the reverse
-gear, park assist, camera views, warnings and calls, and hold iDrive's focus
-under Android Auto, as it does today. Part B checks that it does.
+This build does what NBT-AAD's own iDrive plugin did, through NBT Manager's
+bridge 1.6: it holds iDrive on a blank state under Android Auto (the knob and
+the favourite keys stop reaching iDrive's menus underneath), steps aside for
+the reverse camera, park assist, camera views and screens the car opens,
+keeps Android Auto during calls, feeds the daemon its car data, and has the
+manager open TCP 5277 in the packet filter (docs/upstream-interface.md,
+"Bridge 1.6").
 
 ## What you need
 
-- The car with NBT Manager from test kit dev119 or later (it trusts the kit's
-  `test-app` key, starts applications with the car and runs bridge 1.5
-  applications only) and the phone app from the same kit, paired. Your hand
-  install of NBT-AAD, working.
-- `build/car-test/`: `android-auto-0.0.3.nbt` and `android-auto-0.0.4.nbt`
-  (NBT-AAD 1.9.112 inside both), and `SHA256SUMS.txt`. Copy both packages to
-  the phone. A copy of the bridge 1.0 test packages left on the car shows
-  "(needs an update)": 0.0.3 replaces it.
+- NBT Manager from test kit **dev122** (bridge 1.6), with its phone app,
+  paired. Update the manager from the phone, then **Restart iDrive** (the
+  plugin changed).
+- **No NBT-AAD hand install**: its plugin (`libNbtAad.so`) would hold iDrive
+  too. If it is still there, uninstall it first.
+- `android-auto-0.0.6.nbt` and `android-auto-0.0.7.nbt` (NBT-AAD 1.9.112
+  inside both) and `SHA256SUMS.txt`, from the kit folder. Copy both packages
+  to the phone.
 - SSH to the head unit (the logs, and recovery).
-- Your NBT-AAD settings (iDrive: Android Auto entry → Settings, and
-  `/opt/aa/nbt-aad.env`). The managed daemon reads none of them.
 
-## Before you start
+## A. Install, settings
 
-1. In NBT-AAD's Settings, **untick Start automatically**. Then **Force Stop**.
-2. Over SSH, check that nothing answers on its port: `pidin -p nbt-aad` lists
-   nothing.
-3. Do not select NBT-AAD's **Start Android Auto** while no daemon runs: it
-   would start the hand install's daemon, and the managed one then refuses to
-   start ("Another install runs"). While the managed daemon runs, that entry
-   only brings it to the front.
-
-## A. Install, health check, settings
-
-1. On the phone: import `android-auto-0.0.3.nbt`, send it to the car,
-   approve on the car. The manager runs its health check (about 10 s): the
-   adapter runs `nbt-aad --license` only. Install must succeed.
-2. In the manager's menu, hold the push on **android-auto**: 12 settings.
-   Set **Audio**, **Wi-Fi network**, **Over USB**, **Use the phone's GPS**,
-   **Car make** and the cluster settings as in your NBT-AAD setup.
+1. On the phone: send `android-auto-0.0.6.nbt` to the car, approve on the car.
+   The update replaces 0.0.5 and runs the health check (about 10 s).
+2. In the manager's menu, hold the push on **android-auto**: the 12 settings
+   are kept from 0.0.5. Set **Show drive mode changes: on** for B.6.
 
 ## B. Start and use
 
-1. Select **android-auto** in the manager's menu. It starts in the background
-   (this build has no hand-over of the screen, no `show` grant). From NBT
-   Manager dev121 the manager stays open and says "Application started"
-   (earlier ones close).
-2. The entry reads **android-auto (Waiting for phone)** (or "No Wi-Fi: USB
-   only" when no network is up). A start with the car (Start with the car:
-   on) shows nothing: the manager is not opened.
-3. Connect the phone as usual. Android Auto must appear on its own. The label
-   becomes **Connected (Wi-Fi)** (or USB).
-4. Use it: knob, touch, voice, media, a navigation route, a call, the volume.
-5. Through NBT-AAD's plugin (the thing to confirm):
-   - Reverse gear: the camera shows, then Android Auto returns.
-   - Park assist button; the camera button (Top View / 360).
-   - Drive mode or DSC change, if "Show drive mode changes" is on.
-   - An incoming call, and an iDrive warning if you have one to trigger.
-   - MENU goes to iDrive; NBT-AAD's **Start Android Auto** entry brings Android
-     Auto back.
+1. Select **android-auto** in the manager's menu: the manager stays open and
+   says "Application started"; connect the phone (Wi-Fi Direct, the default).
+   Android Auto appears; the label reads **Connected (Wi-Fi)**.
+2. **Knob**: turn and push. Only Android Auto reacts; iDrive's menu underneath
+   does not move (no click, no strip of iDrive at the edges).
+3. **Favourite keys**: touch one (iDrive's favourites bar appears over Android
+   Auto, as with CarPlay, without glitches), let go: the bar disappears and
+   the knob still drives Android Auto. Press one: what does it do?
+4. **MENU**, **NAV**, **MEDIA**, **COM**: each goes to Android Auto (its own
+   screen) and iDrive stays held. **BACK** short: Android Auto's back; BACK
+   held: Android Auto minimizes to iDrive.
+5. **Reverse gear**: the camera shows; back to drive: Android Auto returns by
+   itself. The **park assist** button and the **camera** button (Top View /
+   360): Android Auto steps aside, and returns when the view closes.
+6. **Drive mode** rocker and **DSC** button: iDrive's display shows for a few
+   seconds, then Android Auto returns.
+7. **A call** (incoming or from Android Auto): Android Auto stays; after the
+   call the knob still drives Android Auto.
+8. A screen the car opens on its own (a Check Control message, the safety
+   button): Android Auto steps aside and stays aside; the manager's
+   **android-auto** entry (or the phone's "show") brings it back.
+9. Day/night: drive into a garage or wait for dusk if you can; Android Auto's
+   night mode follows the car.
 
-## C. Stop, start again, update
+## C. Stop, start again, update, Wi-Fi Direct
 
 1. In the manager, hold the push on **android-auto**, then **Stop**. Android
-   Auto disappears and iDrive's screen is whole. `pidin -p nbt-aad` lists
-   nothing.
-2. Start it again from the manager. The phone reconnects.
-3. While it runs, send `android-auto-0.0.4.nbt` from the phone and
-   approve. The update stops the running copy, runs the health check and
-   installs. Start it again.
-
-## E. Start with the car
-
-This replaces NBT-AAD's **Start automatically** (leave that unticked).
-
-1. In the manager, hold the push on **android-auto**: the last row reads
-   **Start with the car: off**. Select it: **on**. On the phone, the
-   application's screen shows the same switch, now on.
-2. Switch the car off, lock it and wait until the head unit sleeps, then
-   start the car.
-3. Without opening the manager, Android Auto starts by itself about 25 s after
-   iDrive's menu appears, and the phone connects as in B.3. Note the time from
-   the iDrive menu to Android Auto.
-4. Restart iDrive only (over SSH: `OnOffDSICommander appreset`): no second
-   automatic start. Then set **Start with the car: off** and power cycle: it
-   stays off.
+   Auto disappears, iDrive's screen is whole, the knob drives iDrive again.
+2. Start it again; the phone reconnects over Wi-Fi Direct. Stop and start
+   twice more: it must reconnect each time (before, it stayed on "Waiting for
+   phone").
+3. While it runs, send `android-auto-0.0.7.nbt` and approve: the update stops
+   it, checks and installs. Start it again.
 
 ## D. Over SSH (optional)
 
-The adapter runs as `/var/opt/nbt-manager/apps/android-auto/bin/app`; find
-its pid with `pidin arg | grep android-auto/bin/app`. The daemon is `nbt-aad`,
-from `/var/opt/nbt-manager/data/android-auto/nbt-aad`.
-
-- `kill <adapter pid>` (SIGTERM): a clean stop as in C.1.
-- `kill -9 <adapter pid>`: its daemon keeps running. Start from the manager
-  again: the adapter must stop that leftover daemon first ("a daemon from an
-  earlier start still runs") and then start.
-- Do not SIGKILL `nbt-aad` itself: nothing restores the screen after that yet
-  (seam S3). If you did: `LayerManagerControl set surface 256 visibility 1`.
+- The packet filter rule while it runs: `pfctl -s rules | grep 5277` lists
+  `nbt-app-android-auto` rules on `uap0` and `wfd0`; after a stop it lists none.
+- `pidin arg | grep android-auto/bin/app`: `kill <pid>` stops it cleanly, as C.1.
 
 ## Logs (before switching the car off: `/dev/shmem` is RAM)
 
-- The adapter's lines: the phone app's log for **android-auto**. From 0.0.5
-  it also holds the start and the end of the daemon's own log, copied when
-  the daemon ends: stop **android-auto** first, then **Show log**, **Share**.
-- The daemon: `/dev/shmem/nbt-aad.log` (5 MB, per start). For a log that
-  survives power off, before starting it:
-  `touch /var/opt/nbt-manager/data/android-auto/usblog` with a USB stick
-  in. The daemon then writes `nbt-aad.log` on the stick, as with NBT-AAD's
-  "Save logs to USB". Remove the file afterwards.
-- NBT-AAD's plugin: `/dev/shmem/nbt-aad-app.log`.
-- The manager: its debug log, with the debug log on.
+- The phone app: **android-auto** → **Show log** → **Share**, after stopping
+  it (the daemon's own log is copied in when it ends). Lines `bridge: ...`
+  show each hold request, car value and step aside.
+- NBT Manager's debug log, with the debug log on before the test (the
+  plugin's `application hold` and `car data` lines).
+- `/dev/shmem/nbt-aad.log` if it ended badly.
 
-## Back to the hand install
+## Back to 0.0.5
 
-Uninstall **android-auto** from the manager (hold → Uninstall, or from the
-phone). Tick NBT-AAD's **Start automatically** again.
+Send `android-auto-0.0.5.nbt` again (or uninstall from the manager).
 
 ## Report
 
 | Step | Result | Notes |
 | --- | --- | --- |
-| A.1 install + health check | | |
-| A.2 settings shown and kept | | |
-| B.1-3 start, label, phone connects | | |
-| B.4 use (knob, touch, audio, nav, call, volume) | | |
-| B.5 reverse / park assist / camera / warnings / calls | | |
-| C.1 stop, screen whole | | |
-| C.2 start again | | |
-| C.3 update while running | | |
-| D leftover daemon stopped | | |
-| E.1 switch on, car and phone agree | | |
-| E.3 starts with the car (seconds after iDrive menu) | | |
-| E.4 once per boot; off stays off | | |
-
-With the car's software version (Navigation → Settings → Position and
-software version) and the phone model.
+| A.1 update to 0.0.6 + health check | | |
+| A.2 settings kept | | |
+| B.1 start, manager stays, phone connects | | |
+| B.2 knob only drives Android Auto | | |
+| B.3 favourites bar over Android Auto; pressing a key | | |
+| B.4 MENU/NAV/MEDIA/COM, BACK short/held | | |
+| B.5 reverse, park assist, camera button | | |
+| B.6 drive mode, DSC | | |
+| B.7 call | | |
+| B.8 car screen: aside, back from the manager | | |
+| B.9 day/night | | |
+| C.1 stop, iDrive whole | | |
+| C.2 start/stop ×3 over Wi-Fi Direct | | |
+| C.3 update to 0.0.7 while running | | |
+| D packet filter rules come and go | | |

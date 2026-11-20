@@ -7,10 +7,14 @@ android-auto
 --compat
 nbt_6.5_armv7
 --bridge
-1.5
+1.6
 --bridge-uses=
 --bridge-optional
-status
+status,hold,car-data,net
+--bridge-cds
+driving.gear,sensors.PDCStatus,vehicle.dayNightChangeOver,driving.mode,driving.mode35up,driving.DSCActive,hmi.graphicalContext,communication.callStatus0,communication.callStatus1
+--bridge-net
+tcp:5277@uap0+wfd0
 --setting
 audio|Audio|bluetooth|bluetooth,native
 --setting

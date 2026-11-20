@@ -34,9 +34,10 @@ AAD_ROOT := third_party/nbt-aad
 AAD_DIR := $(AAD_ROOT)/milestone-7
 
 # --- The adapter ---
-LIB_SRC := src/daemon.cpp src/daemon_log.cpp src/daemon_settings.cpp src/daemon_status.cpp
+LIB_SRC := src/daemon.cpp src/daemon_bridge.cpp src/daemon_log.cpp src/daemon_settings.cpp src/daemon_status.cpp
 APP_SRC := $(LIB_SRC) src/main.cpp
-APP_INC := $(NBT_SDK_INC) -Isrc
+# NBT-AAD's own car-data reader (rhmiapp/cds_parse.hpp, PolyForm NC like the package).
+APP_INC := $(NBT_SDK_INC) -Isrc -I$(AAD_DIR)/rhmiapp
 APP_CXXFLAGS := -std=c++11 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti $(CXXFLAGS)
 objs = $(patsubst %.cpp,$(OBJ_DIR)/$(1)/%.o,$(2))
 

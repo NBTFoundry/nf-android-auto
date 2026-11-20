@@ -77,15 +77,20 @@ bool daemon_settings(const nbt::app::Settings& chosen, DaemonSettings* out) {
       out->flags[out->flag_count].name = row.target;
       out->flags[out->flag_count].present = strcmp(given, "1") == 0;
       ++out->flag_count;
-    } else if (strcmp(given, "-") != 0) {
-      if (out->env_count >= DaemonSettings::kEnvMax) return false;
-      char* entry = out->env_text[out->env_count];
-      const int n = snprintf(entry, DaemonSettings::kEntryMax, "%s=%s", row.target, given);
-      if (n < 0 || n >= DaemonSettings::kEntryMax) return false;
-      out->env[out->env_count++] = entry;
+    } else if (strcmp(given, "-") != 0 && !add_env(out, row.target, given)) {
+      return false;
     }
   }
-  out->env[out->env_count] = NULL;
+  return true;
+}
+
+bool add_env(DaemonSettings* settings, const char* name, const char* value) {
+  if (settings->env_count >= DaemonSettings::kEnvMax) return false;
+  char* entry = settings->env_text[settings->env_count];
+  const int n = snprintf(entry, DaemonSettings::kEntryMax, "%s=%s", name, value);
+  if (n < 0 || n >= DaemonSettings::kEntryMax) return false;
+  settings->env[settings->env_count++] = entry;
+  settings->env[settings->env_count] = NULL;
   return true;
 }
 

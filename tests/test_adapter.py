@@ -5,6 +5,7 @@ tests/fake_nbt_aad.py appended to it in place of NBT-AAD's."""
 
 import json
 import os
+import re
 import select
 import shutil
 import signal
@@ -80,7 +81,7 @@ class AdapterTest(unittest.TestCase):
             time.sleep(0.05)
         return predicate()
 
-    def launch(self, mode="", launch="user", settings=None, extra_env=None):
+    def launch(self, mode="", launch="user", settings=None, extra_env=None, extra_fds=()):
         ready_r, ready_w = self.track(*os.pipe())
         # The status channel is a file the application rewrites in place.
         self.status_path = os.path.join(self.tmp, "status")
@@ -98,7 +99,7 @@ class AdapterTest(unittest.TestCase):
         env.update(extra_env or {})
         proc = subprocess.Popen(
             [APP, "--ready-fd", str(ready_w), "--lease-fd", str(lease)],
-            env=env, pass_fds=(ready_w, lease, status_w),
+            env=env, pass_fds=(ready_w, lease, status_w) + tuple(extra_fds),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.procs.append(proc)
         os.close(ready_w)
@@ -233,6 +234,116 @@ class AdapterTest(unittest.TestCase):
         code, out = self.finish(second)
         self.assertEqual(code, 0, out)
         self.assertIn("from an earlier start", out)
+
+    # ---- bridge 1.6 (src/daemon_bridge.cpp) ----
+
+    def hold_request(self):
+        """The adapter's last hold request: (sequence, word), or None."""
+        with open(self.hold_path) as f:
+            text = f.read()
+        if not text:
+            return None
+        sequence, word = text.split()
+        return int(sequence), word
+
+    def car(self, name, sequence, value):
+        with open(os.path.join(self.shmem, "nbt-bridge1-cds-" + name), "w") as f:
+            f.write("%d %s\n" % (sequence, value))
+
+    def answer(self, sequence, word):
+        with open(self.answer_path, "w") as f:
+            f.write("%d %s\n" % (sequence, word))
+
+    def fake(self, overlay, preview=0):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(b"fake-overlay %d %d" % (overlay, preview), ("127.0.0.1", self.port))
+
+    def words(self, prefix=""):
+        return [r["word"] for r in self.records("word")
+                if r["word"].startswith(prefix) and not r["word"].startswith(("ping", "fake-"))]
+
+    def test_bridge_16_hold_car_data_and_network(self):
+        self.hold_path = os.path.join(self.shmem, "nbt-bridge1-android-auto.hold")
+        self.answer_path = os.path.join(self.shmem, "nbt-bridge1-android-auto.hmi")
+        hold_fd = self.track(os.open(self.hold_path, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o600))
+        proc, ready_r = self.launch(mode="connected", extra_fds=(hold_fd,), extra_env={
+            "NBT_BRIDGE": "1.6", "NBT_BRIDGE_CAPS": "status,hold,car-data,net",
+            "NBT_HOLD_FD": str(hold_fd), "NBT_HOLD_STATE": self.answer_path,
+            "NBT_CDS_DIR": self.shmem, "NBT_NET": "tcp:5277@uap0+wfd0"})
+        os.close(hold_fd)
+        self.fds.remove(hold_fd)
+        self.assertEqual(read_byte(ready_r, 5), b"R")
+        # The manager opened the port: the daemon leaves the packet filter on.
+        self.assertEqual(self.records("start")[0]["env"]["NBT_KEEP_PF"], "1")
+
+        # Car data as the plugin sent it, and the start values for a daemon.
+        self.car("driving.gear", 1, '{"gear":2}')
+        self.car("vehicle.dayNightChangeOver", 1, '{"dayNightChangeOver":2}')
+        self.assertTrue(self.wait_for(lambda: "gear 2" in self.words() and "daynight 2" in self.words()))
+        with open(os.path.join(self.shmem, "nbt-aad-gear")) as f:
+            self.assertEqual(f.read(), "gear 2\n")
+        self.car("driving.gear", 2, '{"gear":1}')
+        self.car("hmi.graphicalContext", 1, '{"graphicalContext":{"visibleContext":692}}')
+        self.assertTrue(self.wait_for(lambda: "gear 1" in self.words() and "camera 692" in self.words()))
+        self.car("hmi.graphicalContext", 2, '{"graphicalContext":{"visibleContext":13}}')
+        self.assertTrue(self.wait_for(lambda: "camera 0" in self.words()))
+
+        # The hold follows Android Auto on screen, the favourites bar, and leaving.
+        self.assertIsNone(self.hold_request())
+        self.fake(1)
+        self.assertTrue(self.wait_for(lambda: (self.hold_request() or (0, ""))[1] == "hold"))
+        self.fake(1, preview=1)
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[1] == "peek"))
+        self.fake(1)
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[1] == "hold"))
+        # iDrive opened a screen of its own: the daemon steps aside.
+        self.answer(100, "aside")
+        self.assertTrue(self.wait_for(lambda: "hide" in self.words()))
+        # A key that went to the phone: iDrive is held again instead.
+        before = self.hold_request()[0]
+        self.fake(3)
+        time.sleep(0.3)
+        self.answer(101, "aside")
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[0] > before))
+        self.assertEqual(self.hold_request()[1], "hold")
+        self.assertEqual(self.words("hide"), ["hide"])
+        # A call: Android Auto stays, held again when the call ends.
+        self.fake(1)
+        self.car("communication.callStatus0", 1, '{"callStatus":{"id":0,"state":1}}')
+        time.sleep(0.5)
+        before = self.hold_request()[0]
+        self.answer(102, "aside")
+        time.sleep(0.5)
+        self.assertEqual(self.hold_request()[0], before)
+        self.car("communication.callStatus0", 2, '{"callStatus":{"id":0,"state":0}}')
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[0] > before))
+        self.assertEqual(self.words("hide"), ["hide"])
+        # Android Auto left the screen.
+        self.fake(0)
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[1] == "release"))
+
+        proc.send_signal(signal.SIGTERM)
+        code, out = self.finish(proc)
+        self.assertEqual(code, 0, out)
+        self.assertIn("bridge: focus hold on, car data on, network rules tcp:5277@uap0+wfd0", out)
+
+    def test_bridge_15_manager_gets_nothing_new(self):
+        proc, ready_r = self.launch(mode="connected")
+        self.assertEqual(read_byte(ready_r, 5), b"R")
+        self.assertNotIn("NBT_KEEP_PF", self.records("start")[0]["env"])
+        proc.send_signal(signal.SIGTERM)
+        code, out = self.finish(proc)
+        self.assertEqual(code, 0, out)
+        self.assertIn("bridge: focus hold off, car data off, network rules none", out)
+
+    def test_package_declares_the_car_data_it_reads(self):
+        root = os.path.join(os.path.dirname(__file__), "..")
+        with open(os.path.join(root, "src", "protocol.hpp")) as f:
+            names = re.findall(r'^const char kCds\w+\[\] = "([^"]+)";', f.read(), re.M)
+        with open(os.path.join(root, "release", "package.args")) as f:
+            lines = f.read().split("\n")
+        self.assertEqual(lines[lines.index("--bridge-cds") + 1], ",".join(names))
+        self.assertEqual(lines[lines.index("--bridge-net") + 1], "tcp:5277@uap0+wfd0")
 
 
 if __name__ == "__main__":

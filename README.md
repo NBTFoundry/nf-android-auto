@@ -26,20 +26,21 @@ authors. Android Auto is a trademark of Google LLC.
 
 ## Status
 
-**A test build, not for use while driving.** The manager does not yet provide
-what NBT-AAD's own iDrive plugin did: stepping aside for the reverse camera,
-park assist, warnings and calls, and holding iDrive's focus under Android
-Auto. That is bridge 1.6, planned in the manager; see
-[docs/upstream-interface.md](docs/upstream-interface.md). Until then NBT-AAD's
-own iDrive plugin, left installed, serves the managed daemon too:
-[docs/car-test.md](docs/car-test.md) is the test with it. The adapter refuses
-to start while another install's daemon runs.
+**A test build, not for use while driving.** With NBT Manager's bridge 1.6
+the adapter does what NBT-AAD's own iDrive plugin did: it holds iDrive's focus
+under Android Auto, steps aside for the reverse camera, park assist, camera
+views and screens the car opens, keeps Android Auto during calls, feeds the
+daemon its car data and has the manager open its port in the packet filter;
+see [docs/upstream-interface.md](docs/upstream-interface.md). Under an older
+manager (bridge 1.5) none of that happens. The car test is
+[docs/car-test.md](docs/car-test.md). The adapter refuses to start while
+another install's daemon runs.
 
 ```mermaid
 flowchart LR
-  MGR["NBT Manager<br/>(host)"] <-->|"bridge: ready · heartbeat<br/>status · show · stop"| AD["adapter<br/>nbt-android-auto"]
+  MGR["NBT Manager<br/>(host)"] <-->|"bridge: ready · heartbeat<br/>status · show · stop<br/>hold · car data · net"| AD["adapter<br/>nbt-android-auto"]
   AD -->|"spawn · settings as NBT_* · flags"| AAD["NBT-AAD daemon<br/>(unmodified)"]
-  AD <-->|"UDP 52790: ping · show · quit<br/>/dev/shmem records"| AAD
+  AD <-->|"UDP 52790: ping · show · quit<br/>car words · hide<br/>/dev/shmem records"| AAD
 ```
 
 ## Build and test

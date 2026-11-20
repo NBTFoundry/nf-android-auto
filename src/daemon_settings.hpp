@@ -37,6 +37,9 @@ unsigned setting_rows(const SettingRow** rows);
  * fit or does not parse (tests/adapter_test.cpp checks the real one). */
 bool daemon_settings(const nbt::app::Settings& chosen, DaemonSettings* out);
 
+/* One more NAME=value entry; false when it does not fit. */
+bool add_env(DaemonSettings* settings, const char* name, const char* value);
+
 /* Creates the flags that are present and removes the others, in `dir`. False
  * when one cannot be made or removed. */
 bool apply_flags(const DaemonSettings& settings, const char* dir);

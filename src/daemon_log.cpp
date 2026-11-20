@@ -73,7 +73,9 @@ bool copy_log_ends(const char* path, FILE* out, size_t head, size_t tail) {
 
 void copy_daemon_log() {
   char path[256];
-  if (snprintf(path, sizeof(path), "%s/%s", shmem_dir(), kLogFile) >= static_cast<int>(sizeof(path))) return;
+  if (snprintf(path, sizeof(path), "%s/%s", shmem_dir(), kLogFile) >=
+      static_cast<int>(sizeof(path)))
+    return;
   copy_log_ends(path, stdout);
 }
 

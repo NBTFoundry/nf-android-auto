@@ -16,6 +16,7 @@ struct DaemonState {
   char state[24];
   pid_t pid;
   int overlay; /* 0 hidden, 1-5 on screen (src/protocol.hpp) */
+  int preview; /* 1 while iDrive's favourites bar is previewed over it */
 };
 bool parse_state(const char* text, DaemonState* out);
 bool read_state(DaemonState* out);
