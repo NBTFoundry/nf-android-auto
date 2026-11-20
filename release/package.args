@@ -7,7 +7,7 @@ android-auto
 --compat
 nbt_6.5_armv7
 --bridge
-1.0
+1.5
 --bridge-uses=
 --bridge-optional
 status

@@ -2,15 +2,16 @@
 # release/package.args from it and src/settings.def (a --setting line per row);
 # `make test` fails when that file is out of date.
 #
-# Bridge 1.0 only (README, "Status"): the menu label. Not `show`: the
-# manager would hand the application its surface, which the daemon does not
-# use (it places its own), and stop it when nothing appeared there.
+# Bridge 1.5, the oldest NBT Manager runs, with `status` only (README,
+# "Status"): the menu label. Not `show`: the manager would hand the
+# application its surface, which the daemon does not use (it places its own),
+# and stop it when nothing appeared there.
 --app
 android-auto
 --compat
 nbt_6.5_armv7
 --bridge
-1.0
+1.5
 --bridge-uses=
 --bridge-optional
 status

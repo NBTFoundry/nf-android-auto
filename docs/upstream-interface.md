@@ -70,7 +70,7 @@ the manager provides or will.
 
 ## What the manager does not provide yet (bridge 1.6)
 
-Until then the package declares bridge 1.0 (`status` only: with `show` the
+Until then the package declares bridge 1.5, the oldest NBT Manager runs (`status` only: with `show` the
 manager hands over its own surface, which the daemon does not use, and stops
 the application when nothing appears there) and is **not for use while
 driving** without NBT-AAD's own plugin (see docs/car-test.md): nothing steps Android Auto aside for the reverse

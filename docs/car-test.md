@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
-# Car test: Android Auto under NBT Manager (bridge 1.0 build)
+# Car test: Android Auto under NBT Manager (bridge 1.5 build, status only)
 
 Parked, ignition on. About 45 minutes. Keep SSH/ENET recovery at hand.
 
