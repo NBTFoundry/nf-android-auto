@@ -53,6 +53,10 @@ const char kKeepPfVar[] = "NBT_KEEP_PF";  // upstream: milestone-7/src/main.cpp
 // from NBT Manager's native_audio setting (NBT_AUDIO_CONN).
 const char kBrowserConnVar[] = "NBT_BROWSER_CONN";  // upstream: milestone-7/src/audio/config.cpp
 
+// The io-amp input its native audio writes through A2I instead of the browser's
+// libasound input; set from NBT Manager's native_audio setting (NBT_AUDIO_A2I).
+const char kBrowserA2iVar[] = "NBT_BROWSER_A2I";  // upstream: milestone-7/src/audio/config.cpp
+
 // What NBT-AAD's iDrive plugin told the daemon, which the adapter now does
 // from NBT Manager's bridge 1.6 (src/daemon_bridge.cpp). Words on the control
 // port, each followed by its numbers:

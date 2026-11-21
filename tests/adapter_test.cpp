@@ -293,6 +293,13 @@ void test_audio_conn() {
   CHECK(!aa::audio_conn_valid("0x10000")); /* beyond the connection ids */
   CHECK(!aa::audio_conn_valid("0x1d0 "));
   CHECK(!aa::audio_conn_valid("0x1g0"));
+  CHECK(aa::audio_input_valid("input_stereo_0"));
+  CHECK(aa::audio_input_valid("input_stereo_AirPlayMain"));
+  CHECK(!aa::audio_input_valid(NULL));
+  CHECK(!aa::audio_input_valid(""));
+  CHECK(!aa::audio_input_valid("/dev/io-amp/input_stereo_0"));
+  CHECK(!aa::audio_input_valid("input stereo"));
+  CHECK(!aa::audio_input_valid("input_stereo_0_and_a_name_too_long"));
 }
 
 }  // namespace

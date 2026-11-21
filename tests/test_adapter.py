@@ -343,22 +343,29 @@ class AdapterTest(unittest.TestCase):
         self.assertIn("bridge: focus hold on, car data on, network rules tcp:5277@uap0+wfd0", out)
 
     def test_manager_audio_connection_reaches_the_daemon(self):
-        """NBT Manager's native_audio setting (NBT_AUDIO_CONN) becomes the
-        daemon's NBT_BROWSER_CONN; a malformed value is not passed on."""
+        """NBT Manager's native_audio setting (NBT_AUDIO_CONN, NBT_AUDIO_A2I)
+        becomes the daemon's NBT_BROWSER_CONN and NBT_BROWSER_A2I; a malformed
+        value is not passed on."""
         proc, ready_r = self.launch(mode="connected", settings={"audio": "native"},
-                                    extra_env={"NBT_AUDIO_CONN": "0x1d0"})
+                                    extra_env={"NBT_AUDIO_CONN": "0x1d0",
+                                               "NBT_AUDIO_A2I": "input_stereo_0"})
         self.assertEqual(read_byte(ready_r, 5), b"R")
-        self.assertEqual(self.records("start")[0]["env"]["NBT_BROWSER_CONN"], "0x1d0")
+        env = self.records("start")[0]["env"]
+        self.assertEqual(env["NBT_BROWSER_CONN"], "0x1d0")
+        self.assertEqual(env["NBT_BROWSER_A2I"], "input_stereo_0")
         proc.send_signal(signal.SIGTERM)
         code, out = self.finish(proc)
         self.assertEqual(code, 0, out)
         self.assertIn("native audio: connection 0x1d0", out)
+        self.assertIn("native audio: io-amp input input_stereo_0", out)
 
     def test_bridge_15_manager_gets_nothing_new(self):
-        proc, ready_r = self.launch(mode="connected", extra_env={"NBT_AUDIO_CONN": "0"})
+        proc, ready_r = self.launch(mode="connected", extra_env={"NBT_AUDIO_CONN": "0",
+                                                                 "NBT_AUDIO_A2I": "../x"})
         self.assertEqual(read_byte(ready_r, 5), b"R")
         self.assertNotIn("NBT_KEEP_PF", self.records("start")[0]["env"])
         self.assertNotIn("NBT_BROWSER_CONN", self.records("start")[0]["env"])
+        self.assertNotIn("NBT_BROWSER_A2I", self.records("start")[0]["env"])
         proc.send_signal(signal.SIGTERM)
         code, out = self.finish(proc)
         self.assertEqual(code, 0, out)

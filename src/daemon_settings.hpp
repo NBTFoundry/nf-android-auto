@@ -44,6 +44,10 @@ bool add_env(DaemonSettings* settings, const char* name, const char* value);
  * hexadecimal with 0x, as the daemon's NBT_BROWSER_CONN reads it. */
 bool audio_conn_valid(const char* value);
 
+/* An io-amp input name the manager gives (NBT_AUDIO_A2I): 1 to 31 letters,
+ * digits and underscores, as the daemon's NBT_BROWSER_A2I reads it. */
+bool audio_input_valid(const char* value);
+
 /* Creates the flags that are present and removes the others, in `dir`. False
  * when one cannot be made or removed. */
 bool apply_flags(const DaemonSettings& settings, const char* dir);

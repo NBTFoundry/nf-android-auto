@@ -128,11 +128,17 @@ int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
    * leaves the packet filter on instead of switching it off. */
   if (lc.net_rules()[0] && !aa::add_env(&settings, aa::kKeepPfVar, "1")) return 1;
   /* NBT Manager's native_audio setting: the connection the SDK's applications
-   * build (NBT_AUDIO_CONN), for the daemon's native audio too. */
+   * build (NBT_AUDIO_CONN) and the io-amp input they play into
+   * (NBT_AUDIO_A2I), for the daemon's native audio too. */
   const char* conn = getenv("NBT_AUDIO_CONN");
   if (aa::audio_conn_valid(conn)) {
     if (!aa::add_env(&settings, aa::kBrowserConnVar, conn)) return 1;
     log_info("native audio: connection %s", conn);
+  }
+  const char* input = getenv("NBT_AUDIO_A2I");
+  if (aa::audio_input_valid(input)) {
+    if (!aa::add_env(&settings, aa::kBrowserA2iVar, input)) return 1;
+    log_info("native audio: io-amp input %s", input);
   }
   if (!claim_port(lc, daemon) || !daemon.start(settings.env)) return 1;
   const int rc = watch(lc, daemon);

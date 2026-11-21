@@ -101,6 +101,13 @@ bool audio_conn_valid(const char* value) {
   return strspn(value + 2, "0") != n; /* not 0: that would turn routing off */
 }
 
+bool audio_input_valid(const char* value) {
+  if (!value) return false;
+  const size_t n = strlen(value);
+  return n > 0 && n < 32 &&
+         strspn(value, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") == n;
+}
+
 bool apply_flags(const DaemonSettings& settings, const char* dir) {
   bool ok = true;
   for (unsigned i = 0; i < settings.flag_count; ++i) {
