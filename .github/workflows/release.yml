@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 # Signed package from a vMAJOR.MINOR.PATCH tag: NBT Manager's application release
-# workflow builds it in the private QNX image (QNX 6.5 SP1 toolchain), signs it with
-# the apps key (this repository's "release" environment, secret APPS_SIGNING_KEY,
-# after approval) and publishes android-auto-X.Y.Z.nbt. The tag gives the version and
+# workflow builds it without the QNX SDP (the NBT toolchain's QNX target, through the
+# SDK; no private image), signs it with the apps key (this repository's "release"
+# environment, secret APPS_SIGNING_KEY, after approval) and publishes
+# android-auto-X.Y.Z.nbt. The tag gives the version and
 # the sequence; release/package.args describes the package; release/sdk.ref names the
 # NBTFoundry/sdk commit it builds against (ci.yml reads the same file).
 name: Release
@@ -34,7 +35,7 @@ jobs:
 
   release:
     needs: pins
-    uses: NBTFoundry/manager/.github/workflows/app-release.yml@d8ffcb1ecd7dad5a358b599458937223f5552001 # manager main
+    uses: NBTFoundry/manager/.github/workflows/app-release.yml@aa7b1b43d21fa80c5d0bc29030af0535ecbb6f6b # manager v0.2.0
     permissions:
       contents: write
       packages: read
@@ -42,5 +43,6 @@ jobs:
     secrets: inherit
     with:
       sdk-ref: ${{ needs.pins.outputs.sdk }}
+      qnx: false
       build: make -j"$(nproc)" qnx qnx-check
       payload: build/nbt-android-auto-qnx

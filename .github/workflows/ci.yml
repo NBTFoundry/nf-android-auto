@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 # Host checks: what the adapter assumes about the pinned NBT-AAD (check-protocol,
 # release/package.args up to date), its unit tests, the adapter with the fake
-# daemon (plain and under ASan/UBSan), and NBT-AAD's own host tests at the pin.
-# The QNX build and the QNX 6.5 VM need the QNX SDP: release.yml builds in the
-# private QNX image, the VM runs locally (README).
+# daemon (plain and under ASan/UBSan), and NBT-AAD's own host tests at the pin;
+# the head unit's build (adapter and daemon) with the NBT toolchain, without the
+# QNX SDP. The QNX 6.5 VM runs locally (README).
 name: ci
 
 on:
@@ -47,3 +47,26 @@ jobs:
       - run: make -C app -j"$(nproc)" test-asan
       - run: make -C app check-static-init
       - run: make -C app test-upstream
+
+  qnx:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: app
+          submodules: true
+          persist-credentials: false
+      - id: pins
+        run: |
+          sdk="$(cat app/release/sdk.ref)"
+          [[ "$sdk" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::release/sdk.ref is not a commit"; exit 1; }
+          echo "sdk=$sdk" >>"$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: NBTFoundry/sdk
+          ref: ${{ steps.pins.outputs.sdk }}
+          path: sdk
+          submodules: true
+          persist-credentials: false
+      - run: make -C sdk toolchain
+      - run: make -C app -j"$(nproc)" qnx qnx-check
