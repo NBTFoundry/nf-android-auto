@@ -94,6 +94,13 @@ bool add_env(DaemonSettings* settings, const char* name, const char* value) {
   return true;
 }
 
+bool audio_conn_valid(const char* value) {
+  if (!value || strncmp(value, "0x", 2) != 0) return false;
+  const size_t n = strlen(value + 2);
+  if (n == 0 || n > 4 || strspn(value + 2, "0123456789abcdefABCDEF") != n) return false;
+  return strspn(value + 2, "0") != n; /* not 0: that would turn routing off */
+}
+
 bool apply_flags(const DaemonSettings& settings, const char* dir) {
   bool ok = true;
   for (unsigned i = 0; i < settings.flag_count; ++i) {

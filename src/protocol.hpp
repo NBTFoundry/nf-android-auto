@@ -49,6 +49,10 @@ const char kDataDirVar[] = "NBT_DATA_DIR";  // upstream: milestone-7/src/nbt_pat
 // capability `net`); without it the daemon switches the filter off.
 const char kKeepPfVar[] = "NBT_KEEP_PF";  // upstream: milestone-7/src/main.cpp
 
+// The audio connection its native (browser) audio builds, 0xb8 by default; set
+// from NBT Manager's native_audio setting (NBT_AUDIO_CONN).
+const char kBrowserConnVar[] = "NBT_BROWSER_CONN";  // upstream: milestone-7/src/audio/config.cpp
+
 // What NBT-AAD's iDrive plugin told the daemon, which the adapter now does
 // from NBT Manager's bridge 1.6 (src/daemon_bridge.cpp). Words on the control
 // port, each followed by its numbers:

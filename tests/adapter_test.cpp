@@ -280,6 +280,21 @@ void test_aside_rules() {
   unsetenv("NF_AA_SHMEM_DIR");
 }
 
+/* The manager's audio connection (NBT_AUDIO_CONN) as the daemon's NBT_BROWSER_CONN reads it. */
+void test_audio_conn() {
+  CHECK(aa::audio_conn_valid("0x1d0"));
+  CHECK(aa::audio_conn_valid("0xb8"));
+  CHECK(aa::audio_conn_valid("0xFFFF"));
+  CHECK(!aa::audio_conn_valid(NULL));
+  CHECK(!aa::audio_conn_valid(""));
+  CHECK(!aa::audio_conn_valid("0x"));
+  CHECK(!aa::audio_conn_valid("0x0"));     /* would turn routing off */
+  CHECK(!aa::audio_conn_valid("464"));     /* decimal: not what the manager writes */
+  CHECK(!aa::audio_conn_valid("0x10000")); /* beyond the connection ids */
+  CHECK(!aa::audio_conn_valid("0x1d0 "));
+  CHECK(!aa::audio_conn_valid("0x1g0"));
+}
+
 }  // namespace
 
 int main() {
@@ -292,6 +307,7 @@ int main() {
   test_add_env();
   test_bridge_words();
   test_aside_rules();
+  test_audio_conn();
   if (g_failures) {
     fprintf(stderr, "%d adapter checks failed\n", g_failures);
     return 1;

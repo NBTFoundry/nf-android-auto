@@ -24,7 +24,7 @@ the start.
 | --- | --- |
 | Program | Appended to the adapter (`nbt/app/payload.h`), copied to `NBT_DATA_DIR/nbt-aad` at every start |
 | Folders | `NBT_DATA_DIR` makes it a managed install (seam S1): its settings flags, `nbt-aad.env` and boot guard live there; nothing under `/opt/aa` or `/var/opt/aa` is read |
-| Environment | The manager's (iDrive's `PATH`, `LD_LIBRARY_PATH`, `LD_PRELOAD`, `GRAPHICS_ROOT`, `TZ`), the settings' `NBT_*` variables first |
+| Environment | The manager's (iDrive's `PATH`, `LD_LIBRARY_PATH`, `LD_PRELOAD`, `GRAPHICS_ROOT`, `TZ`), the settings' `NBT_*` variables first; the manager's audio connection (`NBT_AUDIO_CONN`, its `native_audio` setting) as `NBT_BROWSER_CONN`, the connection the daemon's native audio builds |
 | Descriptors | `/dev/null` for all three, nothing of the bridge: the daemon then keeps its own log, 5 MB in `/dev/shmem/nbt-aad.log` (or on a USB stick with the flag `usblog` in the data folder); the manager's 64 KiB application log holds the adapter's lines and, once the daemon ends, the first 8 KiB and last 16 KiB of its RAM log (the Wi-Fi source and Bluetooth set-up, then its last lines) |
 | Health check | `nbt-aad --license`: the program and the car's libraries it links load; nothing else is touched |
 | Ready | The first `pong` on the control port, within 4.5 s |

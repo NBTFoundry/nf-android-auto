@@ -8,6 +8,7 @@
 // the daemon's status as the menu label, and a stop the way iDrive's Force
 // Stop did. The daemon itself is NBT-AAD, unmodified (docs/upstream-interface.md).
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -126,6 +127,13 @@ int run_user(Lifecycle& lc, aa::Daemon& daemon, const char* data_dir) {
   /* The manager opened the daemon's port (capability `net`): the daemon
    * leaves the packet filter on instead of switching it off. */
   if (lc.net_rules()[0] && !aa::add_env(&settings, aa::kKeepPfVar, "1")) return 1;
+  /* NBT Manager's native_audio setting: the connection the SDK's applications
+   * build (NBT_AUDIO_CONN), for the daemon's native audio too. */
+  const char* conn = getenv("NBT_AUDIO_CONN");
+  if (aa::audio_conn_valid(conn)) {
+    if (!aa::add_env(&settings, aa::kBrowserConnVar, conn)) return 1;
+    log_info("native audio: connection %s", conn);
+  }
   if (!claim_port(lc, daemon) || !daemon.start(settings.env)) return 1;
   const int rc = watch(lc, daemon);
   aa::copy_daemon_log(); /* what it did, for the log the phone app shares */
