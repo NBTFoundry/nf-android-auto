@@ -53,22 +53,27 @@ make test-asan      # the same under AddressSanitizer/UBSan
 make test-upstream  # NBT-AAD's own host tests, at the pin
 ```
 
-Head unit (QNX 6.5 ARMv7; `QNX_SCREEN_LIBDIR` holds `libscreen.so`):
+Head unit (QNX 6.5 ARMv7), without the QNX SDP: the NBT toolchain's QNX
+target builds both programs (the SDK's `docs/native-apps.md`):
 
 ```sh
-make QNX_ENV=/path/to/qnx-env.sh QNX_SCREEN_LIBDIR=/path/to/screen/lib qnx qnx-check
-make QNX_ENV=... QNX_SCREEN_LIBDIR=... vm-test      # QNX 6.5 SP1 under QEMU (the SDK's VM)
-make QNX_ENV=... QNX_SCREEN_LIBDIR=... package APP_KEY=<key> APP_VERSION=<x.y.z> APP_SEQ=<n>
+make -C ../sdk toolchain   # once
+make qnx qnx-check
+make vm-test               # QNX 6.5 SP1 under QEMU (the SDK's VM; needs the SP1 tools locally)
+make package APP_KEY=<key> APP_VERSION=<x.y.z> APP_SEQ=<n>
 ```
 
-`qnx` builds the daemon with NBT-AAD's own Makefile and the car's libraries
-it carries, then appends it to the adapter: `build/nbt-android-auto-qnx` is
-the package's one executable.
+`qnx` builds the adapter on the SDK, and the daemon from NBT-AAD's sources as
+its Makefile lists them, linked against the car's own libraries (libsocket,
+libssl, libcrypto, libscreen, libusbdi, liba2i_client) by name; then appends
+the daemon to the adapter: `build/nbt-android-auto-qnx` is the package's one
+executable.
 
 ## Releases
 
 A `vX.Y.Z` tag runs `.github/workflows/release.yml`: NBT Manager's application
-release workflow builds the package in the QNX image, signs it with the apps
+release workflow builds the package with the NBT toolchain (no QNX SDP, no
+private image), signs it with the apps
 key after approval (the `release` environment, secret `APPS_SIGNING_KEY`, tags
 `v*` only) and publishes `android-auto-X.Y.Z.nbt`. The tag is this
 repository's own version (the sequence is X·10⁶ + Y·10³ + Z); each release
@@ -87,7 +92,7 @@ names something the pinned daemon does not have.
 
 ```sh
 git -C third_party/nbt-aad fetch origin && git -C third_party/nbt-aad checkout <tag or seam branch>
-make test test-upstream && make QNX_ENV=... QNX_SCREEN_LIBDIR=... qnx-check vm-test
+make test test-upstream && make qnx-check vm-test
 make notice         # when NBT-AAD's notices changed
 ```
 

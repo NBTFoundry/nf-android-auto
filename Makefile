@@ -14,17 +14,8 @@ APP_KEY ?=
 # $(BUILD_DIR)/sdk; the manager is only needed for packaging and its checks.
 NBT_SDK_DIR ?= ../sdk
 NBT_MGR_DIR ?= ../manager
-# QNX toolchain: the environment script to source, and the folder holding
-# the head unit's libscreen.so.
-QNX_ENV ?=
-QNX_SCREEN_LIBDIR ?=
-
 CXX ?= g++
-QCC ?= qcc
 PYTHON ?= python3
-QNX_STRIP ?= ntoarmv7-strip
-QNX_READELF ?= ntoarmv7-readelf
-QNX_NM ?= ntoarmv7-nm
 
 NBT_SDK_BUILD_DIR := $(abspath $(BUILD_DIR))/sdk
 include $(NBT_SDK_DIR)/nbt-sdk.mk
@@ -51,8 +42,8 @@ QNX_APP := $(BUILD_DIR)/nbt-android-auto-qnx
 FAKE_DAEMON := tests/fake_nbt_aad.py
 ASAN_FLAGS := -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 
-.PHONY: all host test test-asan test-upstream check-protocol check-static-init format qnx qnx-env \
-	qnx-check daemon-qnx package package-args notice clean
+.PHONY: all host test test-asan test-upstream check-protocol check-static-init format qnx \
+	qnx-check package package-args notice clean
 
 all: host test
 
@@ -112,48 +103,55 @@ check-static-init: $(call objs,host,$(APP_SRC))
 format:
 	clang-format -i src/*.cpp src/*.hpp tests/*.cpp
 
-# --- QNX (head unit, ARMv7): the adapter with the real daemon appended ---
-qnx-env:
-	@test -n "$(QNX_ENV)" || { echo "QNX_ENV is not set: make QNX_ENV=/path/to/qnx-env.sh ..."; exit 1; }
-	@test -r "$(QNX_ENV)" || { echo "QNX_ENV=$(QNX_ENV) is not readable"; exit 1; }
+# --- QNX (head unit, ARMv7): the adapter with the real daemon appended, both
+# ordinary QNX programs built with the NBT toolchain's QNX target: no QNX SDP
+# (module/flags.mk in the SDK; "make -C ../sdk toolchain" once). ---
+QNX_APP_CXXFLAGS = $(NBT_QNX_CXXFLAGS) $(NBT_QNX_SDK_INC) -O2 -std=c++11 -Wall -Wextra -Werror \
+	-fno-exceptions -fno-rtti $(APP_INC)
 
-QNX_CPP_VARIANT := -Vgcc_ntoarmv7le_gpp
-QNX_APP_CXXFLAGS := $(QNX_CPP_VARIANT) -D_QNX_SOURCE -O2 -Wc,-std=c++11 -Wc,-fno-exceptions \
-	-Wc,-fno-rtti -Wp,-U__EXCEPTIONS -Wc,-Wall -Wc,-Wextra -Wc,-Werror $(APP_INC)
-QNX_DEPFLAGS = -Wp,-MMD,$(@:.o=.d) -Wp,-MP -Wp,-MT,$@
-
-$(OBJ_DIR)/qnx/%.o: %.cpp | qnx-env
+$(OBJ_DIR)/qnx/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	. "$(QNX_ENV)" && $(QCC) $(QNX_APP_CXXFLAGS) $(QNX_DEPFLAGS) -c $< -o $@
+	$(NBT_QNX_CXX) $(QNX_APP_CXXFLAGS) -MMD -MP -c $< -o $@
 
-$(QNX_ADAPTER)-unstripped: $(call objs,qnx,$(APP_SRC)) $(NBT_SDK_QNX_LIBS) | qnx-env
-	@test -n "$(QNX_SCREEN_LIBDIR)" || { echo "QNX_SCREEN_LIBDIR is not set (directory with libscreen.so)"; exit 1; }
-	. "$(QNX_ENV)" && $(QCC) $(QNX_CPP_VARIANT) -lang-c++ $(filter %.o %.a,$^) \
-		-L$(QNX_SCREEN_LIBDIR) $(NBT_SDK_QNX_LDFLAGS) $(NBT_SDK_QNX_LDLIBS) -o $@
+$(QNX_ADAPTER)-unstripped: $(call objs,qnx,$(APP_SRC)) $(NBT_SDK_QNX_LIBS)
+	$(call nbt_qnx_link,$@,$(filter %.o %.a,$^),$(NBT_SDK_QNX_LDLIBS))
 
 $(QNX_ADAPTER): $(QNX_ADAPTER)-unstripped
-	. "$(QNX_ENV)" && $(QNX_STRIP) -o $@ $<
+	$(NBT_LLVM_BIN)/llvm-strip -o $@ $<
 
-# The daemon with NBT-AAD's own Makefile, flags and libraries (its objects
-# stay in the submodule, which ignores them).
-daemon-qnx: | qnx-env
-	. "$(QNX_ENV)" && $(MAKE) -C $(AAD_DIR) QCC=$(QCC) nbt-aad
-	@mkdir -p $(BUILD_DIR)
-	. "$(QNX_ENV)" && $(QNX_STRIP) -o $(QNX_DAEMON) $(AAD_DIR)/nbt-aad
+# The daemon: NBT-AAD's sources as its Makefile lists them, with its include
+# directories and libraries (its own flags are QNX compiler options). Its
+# objects stay in this build directory.
+aad_var = $(shell $(MAKE) -s --no-print-directory -C $(AAD_DIR) -f Makefile -f $(abspath tools/print_var.mk) print-$(1))
+AAD_SRCS := $(call aad_var,SRCS)
+AAD_CSRCS := $(call aad_var,CSRCS)
+AAD_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_SRCS)) $(patsubst %.c,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_CSRCS))
+AAD_INC := -I$(AAD_DIR)/include -I$(AAD_DIR)/src
+AAD_LDLIBS := -rpath /opt/mm/lib:/lib:/usr/lib -la2i_client -lsocket -lssl -lcrypto -lscreen -lusbdi -lm
 
-$(QNX_APP): $(QNX_ADAPTER) daemon-qnx
+$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(NBT_QNX_CXX) $(NBT_QNX_CXXFLAGS) -O2 -std=gnu++11 -w $(AAD_INC) -MMD -MP -c $< -o $@
+
+$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(NBT_QNX_CC) $(NBT_QNX_CFLAGS) -O2 -std=gnu99 -w $(AAD_INC) -MMD -MP -c $< -o $@
+
+$(QNX_DAEMON)-unstripped: $(AAD_OBJS)
+	$(call nbt_qnx_link,$@,$(AAD_OBJS),$(AAD_LDLIBS))
+
+$(QNX_DAEMON): $(QNX_DAEMON)-unstripped
+	$(NBT_LLVM_BIN)/llvm-strip -o $@ $<
+
+$(QNX_APP): $(QNX_ADAPTER) $(QNX_DAEMON)
 	$(NBT_SDK_APPEND) $(QNX_ADAPTER) $(QNX_DAEMON) $@
 
 qnx: $(QNX_APP)
 
 # The car runs QNX 6.5.0 SP1: the adapter's imports must exist there. The
-# daemon's are NBT-AAD's business (it links the car's own libraries).
+# daemon also links the car's own liba2i_client and its newer OpenSSL (1.0.1).
 QNX65_SP1_SYSROOT ?= $(HOME)/src/tools/qnx-6.5sp1-tools/sdk/target/qnx6
 qnx-check: qnx
-	. "$(QNX_ENV)" && set -e; \
-		bad="$$($(QNX_NM) -u $(QNX_ADAPTER)-unstripped | grep -E 'GLIBCXX_3\.4\.(1[4-9]|[2-9][0-9])|__cxa_throw' || true)"; \
-		if test -n "$$bad"; then echo "Disallowed QNX ABI symbols:"; echo "$$bad"; exit 1; fi; \
-		echo "OK: adapter ABI symbols"
 	@if test -d "$(QNX65_SP1_SYSROOT)"; then \
 		$(PYTHON) $(NBT_SDK_ROOT)/tools/check_qnx_imports.py --sysroot "$(QNX65_SP1_SYSROOT)" \
 			--readelf $(NBT_MOD_READELF) $(QNX_ADAPTER)-unstripped; \
@@ -190,7 +188,7 @@ vm-test: $(QNX_APP)
 		-x 'daemon: started /dev/shmem/nbt-aad' -x '\[Ctl\] socket failed' \
 		-x 'daemon ended while starting' \
 		$(VM_DIR)/$(VM_APP) $(VM_DIR)/liba2i_client.so $(VM_DIR)/libssl.so.2 $(VM_DIR)/libcrypto.so.2 \
-		$(VM_SP1_LIB)/libusbdi.so.2 $(VM_SP1_LIB)/libcpp.so.4 $(QNX65_SP1_SYSROOT)/armle-v7/bin/cat
+		$(VM_SP1_LIB)/libusbdi.so.2 $(QNX65_SP1_SYSROOT)/armle-v7/bin/cat
 
 # --- The signed package ---
 PACKAGE_INPUT ?= $(QNX_APP)
