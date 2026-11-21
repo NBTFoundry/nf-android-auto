@@ -20,8 +20,9 @@ class Daemon;
  *    `aside` (iDrive left the blank state), the plugin's rules decide: a key
  *    or the knob that went to the phone, or a call, keeps Android Auto (held
  *    again, or after the call); reverse, park assist and a camera view are
- *    the daemon's own; otherwise the car opened a screen of its own and the
- *    daemon gets "hide";
+ *    the daemon's own, as is a driving-mode or DSC change (held again);
+ *    otherwise, when no such car data came within 1.2 s, the car opened a
+ *    screen of its own and the daemon gets "hide";
  *  - car data (`car-data`): gear, park assist, day/night, driving mode, DSC
  *    and iDrive's camera views as the daemon's words, as the plugin sent them;
  *    calls for the rules above. */
@@ -55,6 +56,7 @@ class DaemonBridge {
   bool hold_;
   int requested_; /* the last request, 0 none */
   uint64_t aside_sequence_;
+  uint64_t aside_ms_; /* an `aside` waiting for the car data that explains it, 0 none */
   bool rehold_after_call_;
   bool cars_on_;
   nbt::app::CarData cars_;

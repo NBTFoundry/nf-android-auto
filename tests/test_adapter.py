@@ -286,7 +286,9 @@ class AdapterTest(unittest.TestCase):
         self.car("hmi.graphicalContext", 1, '{"graphicalContext":{"visibleContext":692}}')
         self.assertTrue(self.wait_for(lambda: "gear 1" in self.words() and "camera 692" in self.words()))
         self.car("hmi.graphicalContext", 2, '{"graphicalContext":{"visibleContext":13}}')
-        self.assertTrue(self.wait_for(lambda: "camera 0" in self.words()))
+        self.car("driving.mode35up", 1, '{"mode":4}')
+        self.assertTrue(self.wait_for(lambda: "camera 0" in self.words()
+                                      and "drivemode 1 4 -1" in self.words()))
 
         # The hold follows Android Auto on screen, the favourites bar, and leaving.
         self.assertIsNone(self.hold_request())
@@ -317,6 +319,19 @@ class AdapterTest(unittest.TestCase):
         self.assertEqual(self.hold_request()[0], before)
         self.car("communication.callStatus0", 2, '{"callStatus":{"id":0,"state":0}}')
         self.assertTrue(self.wait_for(lambda: self.hold_request()[0] > before))
+        self.assertEqual(self.words("hide"), ["hide"])
+        # iDrive's driving-mode screen comes before the new mode (dev122): the
+        # adapter waits for the car data, then holds iDrive again.
+        self.fake(1)
+        time.sleep(0.3)
+        before = self.hold_request()[0]
+        self.answer(103, "aside")
+        time.sleep(0.4)
+        self.car("driving.mode35up", 2, '{"mode":9}')
+        self.assertTrue(self.wait_for(lambda: self.hold_request()[0] > before))
+        self.assertEqual(self.hold_request()[1], "hold")
+        self.assertIn("drivemode 1 9 4", self.words())
+        time.sleep(1.5)
         self.assertEqual(self.words("hide"), ["hide"])
         # Android Auto left the screen.
         self.fake(0)

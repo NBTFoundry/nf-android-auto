@@ -20,6 +20,10 @@ using nbt::app::log_info;
 const unsigned kReadEveryMs = 250;
 const uint64_t kInputMs = 5000; /* a driving-mode / DSC change counts as the driver's for 5 s */
 const uint64_t kLateFirstModeMs = 7000; /* a first mode this long after the start is a change */
+/* iDrive's own screen for a driving-mode or DSC change, or a camera, can come
+ * before the car data that explains it (dev122: the driving-mode screen, then
+ * the mode 0.5 s later): "hide" waits this long for it. */
+const uint64_t kAsideSettleMs = 1200;
 /* The daemon's and the plugin's defaults: NBT_GEAR_REVERSE, NBT_PDC_ACTIVE,
  * NBT_AA_CAMERA_CTX (iDrive's camera views). */
 const int kReverseGear = 2;
@@ -70,6 +74,7 @@ DaemonBridge::DaemonBridge()
     : hold_(false),
       requested_(0),
       aside_sequence_(0),
+      aside_ms_(0),
       rehold_after_call_(false),
       cars_on_(false),
       cars_(),
@@ -242,10 +247,19 @@ void DaemonBridge::poll(Lifecycle& lc, Daemon& daemon, const DaemonState* state,
     if (on_screen_request(requested_)) request(lc, Lifecycle::kHold, "the call ended");
   }
   uint64_t sequence = 0;
-  if (lc.hold_state(&sequence) != 2 || sequence == aside_sequence_) return;
-  aside_sequence_ = sequence;
-  if (!on_screen_request(requested_)) return;
-  switch (aside_action(state, now_ms)) {
+  if (lc.hold_state(&sequence) == 2 && sequence != aside_sequence_) {
+    aside_sequence_ = sequence;
+    if (on_screen_request(requested_)) aside_ms_ = now_ms ? now_ms : 1;
+  }
+  if (!aside_ms_) return;
+  if (!on_screen_request(requested_)) { /* Android Auto left by itself meanwhile */
+    aside_ms_ = 0;
+    return;
+  }
+  const char action = aside_action(state, now_ms);
+  if (action == 'h' && now_ms - aside_ms_ < kAsideSettleMs) return;
+  aside_ms_ = 0;
+  switch (action) {
     case 'h':
       log_info("bridge: iDrive opened a screen of its own: Android Auto steps aside");
       daemon.send(kHide);
