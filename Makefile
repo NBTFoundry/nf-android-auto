@@ -25,9 +25,10 @@ AAD_ROOT := third_party/nbt-aad
 AAD_DIR := $(AAD_ROOT)/milestone-7
 
 # --- The adapter ---
-LIB_SRC := src/daemon.cpp src/daemon_settings.cpp src/daemon_status.cpp
+LIB_SRC := src/daemon.cpp src/daemon_bridge.cpp src/daemon_log.cpp src/daemon_settings.cpp src/daemon_status.cpp
 APP_SRC := $(LIB_SRC) src/main.cpp
-APP_INC := $(NBT_SDK_INC) -Isrc
+# NBT-AAD's own car-data reader (rhmiapp/cds_parse.hpp, PolyForm NC like the package).
+APP_INC := $(NBT_SDK_INC) -Isrc -I$(AAD_DIR)/rhmiapp
 APP_CXXFLAGS := -std=c++11 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti $(CXXFLAGS)
 objs = $(patsubst %.cpp,$(OBJ_DIR)/$(1)/%.o,$(2))
 # Each kind of object rebuilds when its compile command changes (the SDK's
@@ -98,7 +99,7 @@ test-upstream:
 # still in the pinned sources.
 check-protocol:
 	$(PYTHON) tools/check_protocol.py --upstream $(AAD_DIR)
-	$(PYTHON) tools/package_args.py --check release/package.base src/settings.def $(PACKAGE_ARGS)
+	$(PYTHON) tools/package_args.py --check release/package.base src/settings.def $(AAD_DIR) $(PACKAGE_ARGS)
 
 check-static-init: $(call objs,host,$(APP_SRC))
 	@set -e; \
@@ -135,7 +136,8 @@ aad_var = $(shell $(MAKE) -s --no-print-directory -C $(AAD_DIR) -f Makefile -f $
 AAD_SRCS := $(call aad_var,SRCS)
 AAD_CSRCS := $(call aad_var,CSRCS)
 AAD_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_SRCS)) $(patsubst %.c,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_CSRCS))
-AAD_INC := -I$(AAD_DIR)/include -I$(AAD_DIR)/src
+# src/compat: QNX headers the NBT toolchain lacks (net/bpf.h).
+AAD_INC := -I$(AAD_DIR)/include -I$(AAD_DIR)/src -Isrc/compat
 AAD_LDLIBS := -rpath /opt/mm/lib:/lib:/usr/lib -la2i_client -lsocket -lssl -lcrypto -lscreen -lusbdi -lm
 AAD_CXX_COMPILE = $(NBT_QNX_CXX) $(NBT_QNX_CXXFLAGS) -O2 -std=gnu++11 -w $(AAD_INC)
 AAD_C_COMPILE = $(NBT_QNX_CC) $(NBT_QNX_CFLAGS) -O2 -std=gnu99 -w $(AAD_INC)
@@ -207,7 +209,7 @@ PACKAGE := $(BUILD_DIR)/android-auto-$(APP_VERSION).nbt
 PACKAGE_ARGS := release/package.args
 
 package-args:
-	$(PYTHON) tools/package_args.py release/package.base src/settings.def $(PACKAGE_ARGS)
+	$(PYTHON) tools/package_args.py release/package.base src/settings.def $(AAD_DIR) $(PACKAGE_ARGS)
 
 package: $(PACKAGE_INPUT) check-protocol
 	@test -f "$(APP_KEY)" || { echo "APP_KEY must name the RSA signing key"; exit 1; }

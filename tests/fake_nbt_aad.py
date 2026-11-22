@@ -12,6 +12,10 @@ the adapter uses (src/protocol.hpp), driven by the environment.
 - NF_AA_FAKE modes: silent (never answers), crash (exits 3 after 1 s), hang
   (stops answering after 1 s), stubborn (ignores "quit" and SIGTERM),
   connected (reports a Wi-Fi session).
+- Its own log, nbt-aad.log in NF_AA_SHMEM_DIR, fresh at each start: a start
+  line, each word received, a stop line.
+- "fake-overlay <overlay> <preview>" from a test rewrites its state record as
+  the daemon does when Android Auto comes and goes.
 """
 import json
 import os
@@ -31,9 +35,18 @@ def log(**record):
             f.write(json.dumps(record) + "\n")
 
 
-def write_records(state, status):
+def daemon_log(line, fresh=False):
+    with open(os.path.join(SHMEM, "nbt-aad.log"), "w" if fresh else "a") as f:
+        f.write(line + "\n")
+
+
+def write_state(state, overlay=0, preview=0):
     with open(os.path.join(SHMEM, "nbt-aad-state"), "w") as f:
-        f.write("%-11.11s %10d %d %d %u\n" % (state, os.getpid(), 0, 0, 0))
+        f.write("%-11.11s %10d %d %d %u\n" % (state, os.getpid(), overlay, preview, 0))
+
+
+def write_records(state, status):
+    write_state(state)
     with open(os.path.join(SHMEM, "nbt-aad-status"), "w") as f:
         f.write(status)
 
@@ -60,10 +73,12 @@ def main():
     files = sorted(os.listdir(data_dir)) if os.path.isdir(data_dir) else []
     log(event="start", pid=os.getpid(), argv0=sys.argv[0], files=files,
         env={k: v for k, v in os.environ.items() if k.startswith(("NBT_", "LD_"))})
+    daemon_log("[Main] fake daemon started, pid %d" % os.getpid(), fresh=True)
+    state = "connected" if MODE == "connected" else "idle"
     if MODE == "connected":
-        write_records("connected", "connected|1|0|1|wifi")
+        write_records(state, "connected|1|0|1|wifi")
     else:
-        write_records("idle", "waiting-phone|1|0|1|-")
+        write_records(state, "waiting-phone|1|0|1|-")
     started = time.monotonic()
     while running[0]:
         if MODE == "crash" and time.monotonic() - started > 1.0:
@@ -74,13 +89,18 @@ def main():
             continue
         word = word.decode(errors="replace")
         log(event="word", word=word)
+        daemon_log("[Main] word %s" % word)
         if word == "ping":
             silent = MODE == "silent" or (MODE == "hang" and time.monotonic() - started > 1.0)
             if not silent:
                 sock.sendto(b"pong", peer)
+        elif word.startswith("fake-overlay "):
+            overlay, preview = (int(v) for v in word.split()[1:3])
+            write_state(state, overlay, preview)
         elif word == "quit" and MODE != "stubborn":
             running[0] = False
     log(event="stop")
+    daemon_log("[Main] fake daemon stopped")
     return 0
 
 

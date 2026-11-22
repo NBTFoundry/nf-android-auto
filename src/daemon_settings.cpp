@@ -77,16 +77,35 @@ bool daemon_settings(const nbt::app::Settings& chosen, DaemonSettings* out) {
       out->flags[out->flag_count].name = row.target;
       out->flags[out->flag_count].present = strcmp(given, "1") == 0;
       ++out->flag_count;
-    } else if (strcmp(given, "-") != 0) {
-      if (out->env_count >= DaemonSettings::kEnvMax) return false;
-      char* entry = out->env_text[out->env_count];
-      const int n = snprintf(entry, DaemonSettings::kEntryMax, "%s=%s", row.target, given);
-      if (n < 0 || n >= DaemonSettings::kEntryMax) return false;
-      out->env[out->env_count++] = entry;
+    } else if (strcmp(given, "-") != 0 && !add_env(out, row.target, given)) {
+      return false;
     }
   }
-  out->env[out->env_count] = NULL;
   return true;
+}
+
+bool add_env(DaemonSettings* settings, const char* name, const char* value) {
+  if (settings->env_count >= DaemonSettings::kEnvMax) return false;
+  char* entry = settings->env_text[settings->env_count];
+  const int n = snprintf(entry, DaemonSettings::kEntryMax, "%s=%s", name, value);
+  if (n < 0 || n >= DaemonSettings::kEntryMax) return false;
+  settings->env[settings->env_count++] = entry;
+  settings->env[settings->env_count] = NULL;
+  return true;
+}
+
+bool audio_conn_valid(const char* value) {
+  if (!value || strncmp(value, "0x", 2) != 0) return false;
+  const size_t n = strlen(value + 2);
+  if (n == 0 || n > 4 || strspn(value + 2, "0123456789abcdefABCDEF") != n) return false;
+  return strspn(value + 2, "0") != n; /* not 0: that would turn routing off */
+}
+
+bool audio_input_valid(const char* value) {
+  if (!value) return false;
+  const size_t n = strlen(value);
+  return n > 0 && n < 32 &&
+         strspn(value, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") == n;
 }
 
 bool apply_flags(const DaemonSettings& settings, const char* dir) {

@@ -38,8 +38,52 @@ const char kStateConnected[] = "connected";    // upstream: milestone-7/src/main
 const char kTransportWifi[] = "wifi";          // upstream: milestone-7/src/main.cpp
 const char kTransportUsb[] = "usb";            // upstream: milestone-7/src/main.cpp
 
+// Its own log in the same folder, fresh at each start (unless it logs to a
+// USB stick): copied into the application log when it ends.
+const char kLogFile[] = "nbt-aad.log";  // upstream: milestone-7/src/usb_log.hpp
+
 // The daemon's own settings environment: its settings folder (seam S1).
 const char kDataDirVar[] = "NBT_DATA_DIR";  // upstream: milestone-7/src/nbt_paths.hpp
+
+// Left to the packet filter's own rules (NBT Manager opens the daemon's port,
+// capability `net`); without it the daemon switches the filter off.
+const char kKeepPfVar[] = "NBT_KEEP_PF";  // upstream: milestone-7/src/main.cpp
+
+// The audio connection its native (browser) audio builds, 0xb8 by default; set
+// from NBT Manager's native_audio setting (NBT_AUDIO_CONN).
+const char kBrowserConnVar[] = "NBT_BROWSER_CONN";  // upstream: milestone-7/src/audio/config.cpp
+
+// The io-amp input its native audio writes through A2I instead of the browser's
+// libasound input; set from NBT Manager's native_audio setting (NBT_AUDIO_A2I).
+const char kBrowserA2iVar[] = "NBT_BROWSER_A2I";  // upstream: milestone-7/src/audio/config.cpp
+
+// What NBT-AAD's iDrive plugin told the daemon, which the adapter now does
+// from NBT Manager's bridge 1.6 (src/daemon_bridge.cpp). Words on the control
+// port, each followed by its numbers:
+const char kHide[] = "hide";                 // upstream: milestone-7/src/main.cpp
+const char kWordGear[] = "gear ";            // upstream: milestone-7/src/main.cpp
+const char kWordPdc[] = "pdc ";              // upstream: milestone-7/src/main.cpp
+const char kWordDayNight[] = "daynight ";    // upstream: milestone-7/src/main.cpp
+const char kWordDriveMode[] = "drivemode ";  // upstream: milestone-7/src/main.cpp
+const char kWordDsc[] = "dsc ";              // upstream: milestone-7/src/main.cpp
+const char kWordCamera[] = "camera ";        // upstream: milestone-7/src/main.cpp
+// The last gear, park-assist and day/night words, read by a daemon at start.
+const char kGearFile[] = "nbt-aad-gear";          // upstream: milestone-7/src/main.cpp
+const char kPdcFile[] = "nbt-aad-pdc";            // upstream: milestone-7/src/main.cpp
+const char kDayNightFile[] = "nbt-aad-daynight";  // upstream: milestone-7/src/main.cpp
+// The iDrive car data the plugin read (CDS names); release/package.base signs
+// the same list as the package's `bridge-cds`.
+// clang-format off
+const char kCdsGear[] = "driving.gear";                    // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsPdc[] = "sensors.PDCStatus";                // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsDayNight[] = "vehicle.dayNightChangeOver";  // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsMode[] = "driving.mode";                    // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsMode35up[] = "driving.mode35up";            // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsDsc[] = "driving.DSCActive";                // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsContext[] = "hmi.graphicalContext";         // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsCall0[] = "communication.callStatus0";      // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+const char kCdsCall1[] = "communication.callStatus1";      // upstream: milestone-7/rhmiapp/nbt_aad_app.cpp
+// clang-format on
 
 }  // namespace aa
 
