@@ -99,7 +99,7 @@ test-upstream:
 # still in the pinned sources.
 check-protocol:
 	$(PYTHON) tools/check_protocol.py --upstream $(AAD_DIR)
-	$(PYTHON) tools/package_args.py --check release/package.base src/settings.def $(PACKAGE_ARGS)
+	$(PYTHON) tools/package_args.py --check release/package.base src/settings.def $(AAD_DIR) $(PACKAGE_ARGS)
 
 check-static-init: $(call objs,host,$(APP_SRC))
 	@set -e; \
@@ -209,7 +209,7 @@ PACKAGE := $(BUILD_DIR)/android-auto-$(APP_VERSION).nbt
 PACKAGE_ARGS := release/package.args
 
 package-args:
-	$(PYTHON) tools/package_args.py release/package.base src/settings.def $(PACKAGE_ARGS)
+	$(PYTHON) tools/package_args.py release/package.base src/settings.def $(AAD_DIR) $(PACKAGE_ARGS)
 
 package: $(PACKAGE_INPUT) check-protocol
 	@test -f "$(APP_KEY)" || { echo "APP_KEY must name the RSA signing key"; exit 1; }

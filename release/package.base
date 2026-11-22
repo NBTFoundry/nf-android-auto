@@ -24,3 +24,16 @@ status,hold,car-data,net
 driving.gear,sensors.PDCStatus,vehicle.dayNightChangeOver,driving.mode,driving.mode35up,driving.DSCActive,hmi.graphicalContext,communication.callStatus0,communication.callStatus1
 --bridge-net
 tcp:5277@uap0+wfd0
+# What the phone app shows before an install (NBT Manager's PROTOCOL.md,
+# "Package information"); tools/package_args.py adds the NBT-AAD version.
+--property
+Project|NBT-AAD (https://github.com/Sq00ky/Supra-iDrive6-Android-Auto)
+--property
+Licence|PolyForm Noncommercial 1.0.0
+--text
+Android Auto by NBT-AAD, with NBTFoundry's changes for NBT Manager.
+--text=
+--text
+Required Notice: Copyright (c) 2026 nanaisu - NBT-AAD
+--text
+(https://github.com/Sq00ky/Supra-iDrive6-Android-Auto)
