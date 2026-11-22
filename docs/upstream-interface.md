@@ -6,7 +6,7 @@ iDrive plugin (`libNbtAad.so`) that starts it, feeds it car data and holds
 iDrive's focus. Under NBT Manager the plugin is retired: the manager's plugin
 and bridge take its place, and this repository's adapter stands between the
 manager and the unmodified daemon. This page lists everything the adapter
-relies on, at the pin (`third_party/nbt-aad`, v1.9.112 plus the seams below).
+relies on, at the pin (`third_party/nbt-aad`, v1.9.117 plus the seams below).
 
 ## How the facts are kept
 
@@ -24,7 +24,7 @@ the start.
 | --- | --- |
 | Program | Appended to the adapter (`nbt/app/payload.h`), copied to `NBT_DATA_DIR/nbt-aad` at every start |
 | Folders | `NBT_DATA_DIR` makes it a managed install (seam S1): its settings flags, `nbt-aad.env` and boot guard live there; nothing under `/opt/aa` or `/var/opt/aa` is read |
-| Environment | The manager's (iDrive's `PATH`, `LD_LIBRARY_PATH`, `LD_PRELOAD`, `GRAPHICS_ROOT`, `TZ`), the settings' `NBT_*` variables first; the manager's audio connection (`NBT_AUDIO_CONN`, its `native_audio` setting) as `NBT_BROWSER_CONN`, the connection the daemon's native audio builds, and its io-amp input (`NBT_AUDIO_A2I`) as `NBT_BROWSER_A2I`, which the daemon's native audio then writes through A2I (fork branch `native-audio-a2i`) instead of the browser's libasound input |
+| Environment | The manager's (iDrive's `PATH`, `LD_LIBRARY_PATH`, `LD_PRELOAD`, `GRAPHICS_ROOT`, `TZ`), the settings' `NBT_*` variables first; the manager's audio connection (`NBT_AUDIO_CONN`, its `native_audio` setting) as `NBT_BROWSER_CONN`, the connection the daemon's native audio builds, and its io-amp input (`NBT_AUDIO_A2I`) as `NBT_BROWSER_A2I`, which the daemon's native audio then writes through A2I (seam S5) instead of the browser's libasound input |
 | Descriptors | `/dev/null` for all three, nothing of the bridge: the daemon then keeps its own log, 5 MB in `/dev/shmem/nbt-aad.log` (or on a USB stick with the flag `usblog` in the data folder); the manager's 64 KiB application log holds the adapter's lines and, once the daemon ends, the first 8 KiB and last 16 KiB of its RAM log (the Wi-Fi source and Bluetooth set-up, then its last lines) |
 | Health check | `nbt-aad --license`: the program and the car's libraries it links load; nothing else is touched |
 | Ready | The first `pong` on the control port, within 4.5 s |
@@ -58,16 +58,21 @@ data folder where the daemon has no variable. Not offered: NBT-AAD's options
 for developers (logging, probes, timings), its "Prompts on car radio (BT)"
 beta (the manager takes at most twelve settings), and the plugin's own
 checkboxes (autostart, USB logs, MENU opens iDrive, iDrive warnings), which
-the manager provides or the adapter decides (bridge 1.6, below).
+the manager provides or the adapter decides (bridge 1.6, below). NBT-AAD's
+newer choices keep its defaults: navigation prompts on the car's own prompt
+channel in native audio, the Google Assistant on a long press of the wheel's
+voice button, the two-finger gesture as next track, and the cluster's track
+list following **LCI wheel media keys**.
 
 ## Seams (upstream pull requests from `NBTFoundry/Supra-iDrive6-Android-Auto`)
 
 | Seam | State | What |
 | --- | --- | --- |
-| S1 | branch `managed-install` (pinned) | `NBT_DATA_DIR` is a managed install's only folder; the favourites bar, picker and vehicle files go through `nbt_paths.hpp` |
+| S1 | branch `managed-install-v1.9.117` (under S5) | `NBT_DATA_DIR` is a managed install's only folder (its favourites, picker and vehicle files moved to the data folder upstream in v1.9.117) |
 | S2 | to do | one header naming the control words and records, which the adapter includes instead of `src/protocol.hpp`'s copies (with NBT-AAD's draft #104, `car_state.hpp`) |
 | S3 | to do | `nbt-aad --recover-screen`: the plugin's clean-up after a SIGKILL, in the daemon, for the adapter to run |
 | S4 | to do | a start mode for the health check: the control port without Bluetooth, Wi-Fi, firewall or screen |
+| S5 | branch `native-audio-a2i-v1.9.117` (pinned, on S1) | `NBT_BROWSER_A2I`: native audio writes its mix into an io-amp input through A2I |
 
 ## Bridge 1.6: what the plugin did
 
