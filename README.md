@@ -21,6 +21,13 @@ it: it pins it as a submodule and adds an adapter, an
 [SDK](https://github.com/NBTFoundry/sdk) application that starts NBT-AAD's
 daemon and stands for it on the manager's bridge.
 
+Part of [NBTFoundry](https://github.com/NBTFoundry):
+[manager](https://github.com/NBTFoundry/manager) ·
+[sdk](https://github.com/NBTFoundry/sdk) ·
+[mobile-app](https://github.com/NBTFoundry/mobile-app) ·
+[installer](https://github.com/NBTFoundry/installer) ·
+[toolchains](https://github.com/NBTFoundry/toolchains)
+
 Not affiliated with or endorsed by BMW AG, Toyota, Google or NBT-AAD's
 authors. Android Auto is a trademark of Google LLC.
 
@@ -31,9 +38,10 @@ the adapter does what NBT-AAD's own iDrive plugin did: it holds iDrive's focus
 under Android Auto, steps aside for the reverse camera, park assist, camera
 views and screens the car opens, keeps Android Auto during calls, feeds the
 daemon its car data and has the manager open its port in the packet filter;
-see [docs/upstream-interface.md](docs/upstream-interface.md). Under an older
-manager (bridge 1.5) none of that happens. The car test is
-[docs/car-test.md](docs/car-test.md). The adapter refuses to start while
+see [docs/upstream-interface.md](docs/upstream-interface.md). The package
+declares bridge 1.6 and carries what the phone app shows before an install
+(the NBT-AAD version, the project, its licence and notice), so it needs NBT
+Manager 0.3.1 or later. The car test is [docs/car-test.md](docs/car-test.md). The adapter refuses to start while
 another install's daemon runs.
 
 ```mermaid
@@ -72,7 +80,9 @@ executable.
 
 ## Releases
 
-A `vX.Y.Z` tag runs `.github/workflows/release.yml`: NBT Manager's application
+`.github/workflows/ci.yml` runs the protocol check, the tests, the same under
+ASan/UBSan, NBT-AAD's own tests and the head-unit build on every push and pull
+request. A `vX.Y.Z` tag runs `.github/workflows/release.yml`: NBT Manager's application
 release workflow builds the package with the NBT toolchain (no QNX SDP, no
 private image), signs it with the apps
 key after approval (the `release` environment, secret `APPS_SIGNING_KEY`, tags
