@@ -28,8 +28,9 @@ Part of [NBTFoundry](https://github.com/NBTFoundry):
 [installer](https://github.com/NBTFoundry/installer) ·
 [toolchains](https://github.com/NBTFoundry/toolchains)
 
-Not affiliated with or endorsed by BMW AG, Toyota, Google or NBT-AAD's
-authors. Android Auto is a trademark of Google LLC.
+Not affiliated with or endorsed by BMW AG, BlackBerry Limited, Toyota, Google or
+NBT-AAD's authors. QNX is a trademark of BlackBerry Limited; Android Auto is a
+trademark of Google LLC.
 
 ## Status
 

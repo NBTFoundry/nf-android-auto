@@ -11,4 +11,4 @@ To the maximum extent permitted by applicable law, the authors and contributors 
 
 This notice describes risks and supplements the warranty and liability provisions of the applicable software licenses. It does not replace those licenses or impose additional restrictions on the rights they grant.
 
-NBTFoundry is not affiliated with or endorsed by BMW AG, Toyota or Google, nor by the authors of NBT-AAD. Android Auto is a trademark of Google LLC. Their names and trademarks remain the property of their respective owners.
+NBTFoundry is not affiliated with or endorsed by BMW AG, BlackBerry Limited, Toyota or Google, nor by the authors of NBT-AAD. QNX is a trademark of BlackBerry Limited; Android Auto is a trademark of Google LLC. Their names and trademarks remain the property of their respective owners.
