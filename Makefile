@@ -31,6 +31,14 @@ APP_SRC := $(LIB_SRC) src/main.cpp
 APP_INC := $(NBT_SDK_INC) -Isrc -I$(AAD_DIR)/rhmiapp
 APP_CXXFLAGS := -std=c++11 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti $(CXXFLAGS)
 objs = $(patsubst %.cpp,$(OBJ_DIR)/$(1)/%.o,$(2))
+# Each kind of object rebuilds when its compile command changes (the SDK's
+# nbt-stamp.mk; the stamps are written at the end of this file).
+stamp = $(OBJ_DIR)/$(1).stamp
+ifeq ($(value nbt_stamp),)
+$(error $(NBT_SDK_ROOT) has no nbt-stamp.mk: update that SDK checkout)
+endif
+HOST_COMPILE = $(CXX) $(APP_INC) $(APP_CXXFLAGS)
+ASAN_COMPILE = $(HOST_COMPILE) $(ASAN_FLAGS)
 
 HOST_ADAPTER := $(BUILD_DIR)/adapter-host
 HOST_APP := $(BUILD_DIR)/nbt-android-auto-host
@@ -49,13 +57,13 @@ ASAN_FLAGS := -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 all: host test
 
 # --- Host (Linux): the adapter with a fake daemon appended ---
-$(OBJ_DIR)/host/%.o: %.cpp
+$(OBJ_DIR)/host/%.o: %.cpp $(call stamp,host)
 	@mkdir -p $(dir $@)
-	$(CXX) $(APP_INC) $(APP_CXXFLAGS) -MMD -MP -c $< -o $@
+	$(HOST_COMPILE) -MMD -MP -c $< -o $@
 
-$(OBJ_DIR)/asan/%.o: %.cpp
+$(OBJ_DIR)/asan/%.o: %.cpp $(call stamp,asan)
 	@mkdir -p $(dir $@)
-	$(CXX) $(APP_INC) $(APP_CXXFLAGS) $(ASAN_FLAGS) -MMD -MP -c $< -o $@
+	$(ASAN_COMPILE) -MMD -MP -c $< -o $@
 
 $(HOST_ADAPTER): $(call objs,host,$(APP_SRC)) $(NBT_SDK_HOST_LIBS)
 	$(CXX) $^ $(LDFLAGS) $(NBT_SDK_HOST_LDLIBS) -o $@
@@ -109,10 +117,11 @@ format:
 # (module/flags.mk in the SDK; "make -C ../sdk toolchain" once). ---
 QNX_APP_CXXFLAGS = $(NBT_QNX_CXXFLAGS) $(NBT_QNX_SDK_INC) -O2 -std=c++11 -Wall -Wextra -Werror \
 	-fno-exceptions -fno-rtti $(APP_INC)
+QNX_COMPILE = $(NBT_QNX_CXX) $(QNX_APP_CXXFLAGS)
 
-$(OBJ_DIR)/qnx/%.o: %.cpp
+$(OBJ_DIR)/qnx/%.o: %.cpp $(call stamp,qnx)
 	@mkdir -p $(dir $@)
-	$(NBT_QNX_CXX) $(QNX_APP_CXXFLAGS) -MMD -MP -c $< -o $@
+	$(QNX_COMPILE) -MMD -MP -c $< -o $@
 
 $(QNX_ADAPTER)-unstripped: $(call objs,qnx,$(APP_SRC)) $(NBT_SDK_QNX_LIBS)
 	$(call nbt_qnx_link,$@,$(filter %.o %.a,$^),$(NBT_SDK_QNX_LDLIBS))
@@ -129,14 +138,16 @@ AAD_CSRCS := $(call aad_var,CSRCS)
 AAD_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_SRCS)) $(patsubst %.c,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_CSRCS))
 AAD_INC := -I$(AAD_DIR)/include -I$(AAD_DIR)/src
 AAD_LDLIBS := -rpath /opt/mm/lib:/lib:/usr/lib -la2i_client -lsocket -lssl -lcrypto -lscreen -lusbdi -lm
+AAD_CXX_COMPILE = $(NBT_QNX_CXX) $(NBT_QNX_CXXFLAGS) -O2 -std=gnu++11 -w $(AAD_INC)
+AAD_C_COMPILE = $(NBT_QNX_CC) $(NBT_QNX_CFLAGS) -O2 -std=gnu99 -w $(AAD_INC)
 
-$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.cpp
+$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.cpp $(call stamp,qnx-aad)
 	@mkdir -p $(dir $@)
-	$(NBT_QNX_CXX) $(NBT_QNX_CXXFLAGS) -O2 -std=gnu++11 -w $(AAD_INC) -MMD -MP -c $< -o $@
+	$(AAD_CXX_COMPILE) -MMD -MP -c $< -o $@
 
-$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.c
+$(OBJ_DIR)/qnx-aad/%.o: $(AAD_DIR)/%.c $(call stamp,qnx-aad)
 	@mkdir -p $(dir $@)
-	$(NBT_QNX_CC) $(NBT_QNX_CFLAGS) -O2 -std=gnu99 -w $(AAD_INC) -MMD -MP -c $< -o $@
+	$(AAD_C_COMPILE) -MMD -MP -c $< -o $@
 
 $(QNX_DAEMON)-unstripped: $(AAD_OBJS)
 	$(call nbt_qnx_link,$@,$(AAD_OBJS),$(AAD_LDLIBS))
@@ -216,3 +227,8 @@ clean:
 
 DEPS := $(shell find $(OBJ_DIR) -name '*.d' 2>/dev/null)
 -include $(DEPS)
+
+$(call nbt_stamp,$(call stamp,host),$(HOST_COMPILE),$(CXX))
+$(call nbt_stamp,$(call stamp,asan),$(ASAN_COMPILE),$(CXX))
+$(call nbt_stamp,$(call stamp,qnx),$(QNX_COMPILE),,$(NBT_TOOLCHAIN)/VERSION)
+$(call nbt_stamp,$(call stamp,qnx-aad),$(AAD_CXX_COMPILE) | $(AAD_C_COMPILE),,$(NBT_TOOLCHAIN)/VERSION)
