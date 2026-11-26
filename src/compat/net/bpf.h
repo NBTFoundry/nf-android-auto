@@ -52,4 +52,23 @@ struct bpf_hdr {
 #define BIOCGRTIMEOUT _IOR('B', 110, struct timeval)
 #define BIOCIMMEDIATE _IOW('B', 112, unsigned int)
 
+/* Statistics and "see sent packets" (NBT-AAD v1.9.120's cluster media
+ * sender); compared with the QNX 6.5 SP1 header on 2026-11-26. */
+struct bpf_stat {
+    uint64_t bs_recv;
+    uint64_t bs_drop;
+    uint64_t bs_capt;
+    uint64_t bs_padding[13];
+};
+
+struct bpf_stat_old {
+    unsigned int bs_recv;
+    unsigned int bs_drop;
+};
+
+#define BIOCGSTATS _IOR('B', 111, struct bpf_stat)
+#define BIOCGSTATSOLD _IOR('B', 111, struct bpf_stat_old)
+#define BIOCGSEESENT _IOR('B', 120, unsigned int)
+#define BIOCSSEESENT _IOW('B', 121, unsigned int)
+
 #endif

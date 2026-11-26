@@ -6,7 +6,7 @@ iDrive plugin (`libNbtAad.so`) that starts it, feeds it car data and holds
 iDrive's focus. Under NBT Manager the plugin is retired: the manager's plugin
 and bridge take its place, and this repository's adapter stands between the
 manager and the daemon. This page lists everything the adapter
-relies on, at the pin (`third_party/nbt-aad`, v1.9.117 plus the seams below).
+relies on, at the pin (`third_party/nbt-aad`, v1.9.120 plus the seams below).
 
 ## How the facts are kept
 
@@ -68,11 +68,11 @@ list following **LCI wheel media keys**.
 
 | Seam | State | What |
 | --- | --- | --- |
-| S1 | branch `managed-install-v1.9.117` (under S5) | `NBT_DATA_DIR` is a managed install's only folder (its favourites, picker and vehicle files moved to the data folder upstream in v1.9.117) |
+| S1 | branch `managed-install-v1.9.120` (under S5) | `NBT_DATA_DIR` is a managed install's only folder (its favourites, picker and vehicle files moved to the data folder upstream in v1.9.117) |
 | S2 | to do | one header naming the control words and records, which the adapter includes instead of `src/protocol.hpp`'s copies (with NBT-AAD's draft #104, `car_state.hpp`) |
 | S3 | to do | `nbt-aad --recover-screen`: the plugin's clean-up after a SIGKILL, in the daemon, for the adapter to run |
 | S4 | to do | a start mode for the health check: the control port without Bluetooth, Wi-Fi, firewall or screen |
-| S5 | branch `native-audio-a2i-v1.9.117` (pinned, on S1) | `NBT_BROWSER_A2I`: native audio writes its mix into an io-amp input through A2I |
+| S5 | branch `native-audio-a2i-v1.9.120` (pinned, on S1) | `NBT_BROWSER_A2I`: native audio writes its mix into an io-amp input through A2I |
 
 ## Bridge 1.6: what the plugin did
 

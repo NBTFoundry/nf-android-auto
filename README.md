@@ -17,7 +17,7 @@ and updated from the phone, signed, health-checked and rolled back like every
 other application, with its settings in the manager.
 
 NBT-AAD is by nanaisu and its contributors. This repository pins it as a
-submodule from NBTFoundry's fork: NBT-AAD v1.9.117 with two changes for a
+submodule from NBTFoundry's fork: NBT-AAD v1.9.120 with two changes for a
 managed install, meant for upstream ([seams S1 and
 S5](docs/upstream-interface.md#seams-upstream-pull-requests-from-nbtfoundrysupra-idrive6-android-auto)):
 its files under `NBT_DATA_DIR`, and native audio written into an io-amp input
@@ -52,7 +52,7 @@ another install's daemon runs.
 ```mermaid
 flowchart LR
   MGR["NBT Manager<br/>(host)"] <-->|"bridge: ready · heartbeat<br/>status · show · stop<br/>hold · car data · net"| AD["adapter<br/>nbt-android-auto"]
-  AD -->|"spawn · settings as NBT_* · flags"| AAD["NBT-AAD daemon<br/>(v1.9.117 + S1, S5)"]
+  AD -->|"spawn · settings as NBT_* · flags"| AAD["NBT-AAD daemon<br/>(v1.9.120 + S1, S5)"]
   AD <-->|"UDP 52790: ping · show · quit<br/>car words · hide<br/>/dev/shmem records"| AAD
 ```
 

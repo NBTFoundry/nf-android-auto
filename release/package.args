@@ -3,7 +3,7 @@
 # tools/package.py, one argument per line. `make package` and the release workflow
 # add the version, sequence, key, output and executable.
 --property
-NBT-AAD|1.9.117
+NBT-AAD|1.9.120
 --app
 android-auto
 --compat

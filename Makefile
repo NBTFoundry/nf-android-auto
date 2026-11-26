@@ -20,7 +20,7 @@ PYTHON ?= python3
 NBT_SDK_BUILD_DIR := $(abspath $(BUILD_DIR))/sdk
 include $(NBT_SDK_DIR)/nbt-sdk.mk
 
-# --- NBT-AAD (third_party/nbt-aad: our fork, v1.9.117 + seams S1 and S5) ---
+# --- NBT-AAD (third_party/nbt-aad: our fork, v1.9.120 + seams S1 and S5) ---
 AAD_ROOT := third_party/nbt-aad
 AAD_DIR := $(AAD_ROOT)/milestone-7
 
@@ -136,7 +136,7 @@ aad_var = $(shell $(MAKE) -s --no-print-directory -C $(AAD_DIR) -f Makefile -f $
 AAD_SRCS := $(call aad_var,SRCS)
 AAD_CSRCS := $(call aad_var,CSRCS)
 AAD_OBJS := $(patsubst %.cpp,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_SRCS)) $(patsubst %.c,$(OBJ_DIR)/qnx-aad/%.o,$(AAD_CSRCS))
-# src/compat: QNX headers the NBT toolchain lacks (net/bpf.h).
+# src/compat: QNX headers the NBT toolchain lacks (net/bpf.h, ifaddrs.h).
 AAD_INC := -I$(AAD_DIR)/include -I$(AAD_DIR)/src -Isrc/compat
 AAD_LDLIBS := -rpath /opt/mm/lib:/lib:/usr/lib -la2i_client -lsocket -lssl -lcrypto -lscreen -lusbdi -lm
 AAD_CXX_COMPILE = $(NBT_QNX_CXX) $(NBT_QNX_CXXFLAGS) -O2 -std=gnu++11 -w $(AAD_INC)
