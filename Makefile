@@ -20,7 +20,7 @@ PYTHON ?= python3
 NBT_SDK_BUILD_DIR := $(abspath $(BUILD_DIR))/sdk
 include $(NBT_SDK_DIR)/nbt-sdk.mk
 
-# --- NBT-AAD, unmodified (third_party/nbt-aad) ---
+# --- NBT-AAD (third_party/nbt-aad: our fork, v1.9.117 + seams S1 and S5) ---
 AAD_ROOT := third_party/nbt-aad
 AAD_DIR := $(AAD_ROOT)/milestone-7
 

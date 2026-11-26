@@ -5,7 +5,7 @@ NBT-AAD ships two programs: the daemon (`nbt-aad`, Android Auto itself) and an
 iDrive plugin (`libNbtAad.so`) that starts it, feeds it car data and holds
 iDrive's focus. Under NBT Manager the plugin is retired: the manager's plugin
 and bridge take its place, and this repository's adapter stands between the
-manager and the unmodified daemon. This page lists everything the adapter
+manager and the daemon. This page lists everything the adapter
 relies on, at the pin (`third_party/nbt-aad`, v1.9.117 plus the seams below).
 
 ## How the facts are kept
