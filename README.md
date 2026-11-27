@@ -95,7 +95,7 @@ key after approval (the `release` environment, secret `APPS_SIGNING_KEY`, tags
 repository's own version (the sequence is X·10⁶ + Y·10³ + Z); each release
 names the NBT-AAD commit it carries. `release/sdk.ref` is the SDK commit that
 both the release and `ci.yml` build against:
-[SDK 0.1.0](https://github.com/NBTFoundry/sdk/releases/tag/v0.1.0). A local test package takes
+[SDK 0.2.0](https://github.com/NBTFoundry/sdk/releases/tag/v0.2.0). A local test package takes
 `APP_VERSION` and `APP_SEQ`.
 
 ## Settings
